@@ -76,6 +76,11 @@ class EurekaLite {
     AppState.events.on('pageChange', ({ currentPage }) => {
       this.render(currentPage);
     });
+
+    // 抽屉状态变化时同步 DOM
+    AppState.events.on('drawerToggle', () => {
+      this.updateDrawer();
+    });
   }
 
   /**
