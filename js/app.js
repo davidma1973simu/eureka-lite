@@ -1987,9 +1987,8 @@ class EurekaLite {
     const screen = AppState.currentScreen || 1;
     const project = AppState.currentProject;
 
-    // Get user's current input
-    const input = document.getElementById('screenInput');
-    const userInput = input?.value || project?.title || '';
+    // Get user's current input (handles screenInput / targetUserInput+sceneDescInput / screenInput2)
+    const userInput = this.getCurrentScreenUserInput() || project?.title || '';
     const aiOn = !!(window.AIService && window.AIService.isReady());
 
     switch (action) {
@@ -2195,6 +2194,68 @@ class EurekaLite {
   }
 
   /**
+   * Get the current user input text for AI prefill, accounting for different screen layouts
+   */
+  getCurrentScreenUserInput() {
+    const targetUserInput = document.getElementById('targetUserInput');
+    const sceneDescInput = document.getElementById('sceneDescInput');
+    if (targetUserInput || sceneDescInput) {
+      const targetUser = targetUserInput?.value?.trim() || '';
+      const sceneDesc = sceneDescInput?.value?.trim() || '';
+      if (targetUser || sceneDesc) {
+        return `【目标用户】${targetUser}\n【场景描述】${sceneDesc}`;
+      }
+    }
+    const screenInput = document.getElementById('screenInput');
+    if (screenInput) return screenInput.value || '';
+    const screenInput2 = document.getElementById('screenInput2');
+    return screenInput2?.value || AppState.currentProject?.title || '';
+  }
+
+  /**
+   * Apply AI prefill content to the correct input fields for the current screen
+   */
+  applyPrefillContent(content) {
+    const stage = AppState.currentStage;
+    const screen = AppState.currentScreen;
+    const targetUserInput = document.getElementById('targetUserInput');
+    const sceneDescInput = document.getElementById('sceneDescInput');
+    const screenInput = document.getElementById('screenInput');
+    const screenInput2 = document.getElementById('screenInput2');
+
+    if (targetUserInput || sceneDescInput) {
+      // Reveal Screen 1: parse structured sections and apply to the two fields
+      const targetMatch = content.match(/【目标用户】\s*([\s\S]*?)(?=\n\s*【|$)/);
+      const sceneMatch = content.match(/【(?:场景描述|使用场景)】\s*([\s\S]*?)(?=\n\s*【|$)/);
+      const painMatch = content.match(/【(?:痛点\/挑战|痛点)】\s*([\s\S]*?)(?=\n\s*【|$)/);
+
+      if (targetMatch && targetUserInput) {
+        targetUserInput.value = targetMatch[1].trim();
+        targetUserInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (sceneDescInput) {
+        const parts = [sceneMatch?.[1], painMatch?.[1]].filter(Boolean).map(s => s.trim()).filter(Boolean);
+        if (parts.length) {
+          sceneDescInput.value = parts.join('\n\n');
+          sceneDescInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+      this.saveCurrentScreenContent(stage, screen);
+      return;
+    }
+
+    if (screenInput) {
+      screenInput.value = content;
+      screenInput.dispatchEvent(new Event('input', { bubbles: true }));
+      this.saveCurrentScreenContent(stage, screen);
+    } else if (screenInput2) {
+      screenInput2.value = content;
+      screenInput2.dispatchEvent(new Event('input', { bubbles: true }));
+      this.saveCurrentScreenContent(stage, screen);
+    }
+  }
+
+  /**
    * Show prefill diff - compare original with revised
    */
   showPrefillDiff(original, prefill) {
@@ -2228,11 +2289,7 @@ class EurekaLite {
     modal.querySelector('.ai-panel-close')?.addEventListener('click', () => modal.remove());
     modal.querySelector('#prefillCancel')?.addEventListener('click', () => modal.remove());
     modal.querySelector('#prefillApply')?.addEventListener('click', () => {
-      const input = document.getElementById('screenInput');
-      if (input) {
-        input.value = prefill.content;
-        this.autoSaveScreenContent(AppState.currentStage, AppState.currentScreen, prefill.content);
-      }
+      this.applyPrefillContent(prefill.content);
       modal.remove();
       this.showToast('✨ 内容已更新');
     });
@@ -5124,29 +5181,28 @@ class EurekaLite {
       this.completeStage(stage);
     });
 
-    // AI Prefill button (generic screenInput) - now powered by DeepSeek
+    // AI Prefill button (generic) - handles screenInput / targetUserInput+sceneDescInput / screenInput2
     document.getElementById('aiPrefillBtn')?.addEventListener('click', async (e) => {
-      const input = document.getElementById('screenInput');
       const screenNum = getCurrentScreen();
-      if (!input) return;
+      const hasInput = document.getElementById('screenInput') || document.getElementById('screenInput2') || document.getElementById('targetUserInput') || document.getElementById('sceneDescInput');
+      if (!hasInput) return;
       const btn = e.currentTarget;
       const aiOn = !!(window.AIService && window.AIService.isReady());
       const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = aiOn ? '🤖 DeepSeek 生成中...' : 'AI 生成中...';
       try {
+        const originalInput = this.getCurrentScreenUserInput();
         const prefill = await AIAssistant.generatePrefillContentAI(
           { stage, screen: screenNum, type: 'text' },
-          input.value,
+          originalInput,
           AppState.currentProject
         );
         if (prefill?.content) {
-          if (input.value && input.value.trim().length >= 5) {
-            this.showPrefillDiff(input.value, prefill);
+          if (originalInput && originalInput.trim().length >= 5) {
+            this.showPrefillDiff(originalInput, prefill);
           } else {
-            input.value = prefill.content;
-            input.dispatchEvent(new Event('input'));
-            this.autoSaveScreenContent(stage, screenNum, input.value);
+            this.applyPrefillContent(prefill.content);
             this.showToast('✨ AI 已生成初稿，你可以继续编辑修订');
           }
         } else {
