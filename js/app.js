@@ -2075,6 +2075,12 @@ class EurekaLite {
       document.getElementById('aiModeChatSubtitle').textContent = info.subtitle;
       const input = document.getElementById('aiModeInput');
       if (input) input.placeholder = info.placeholder;
+
+      // 自动滚动到对话区，让用户看到点击后的反馈
+      const body = document.querySelector('.ai-panel-body');
+      if (body) {
+        setTimeout(() => chat.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+      }
     }
 
     // Generate initial AI message based on current context

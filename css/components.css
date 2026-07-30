@@ -617,7 +617,7 @@
   right: var(--space-md);
   width: calc(100% - var(--space-lg) * 2);
   max-width: 360px;
-  max-height: 400px;
+  max-height: calc(100vh - 180px);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -625,10 +625,11 @@
   z-index: var(--z-ai);
   overflow: hidden;
   display: none;
+  flex-direction: column;
 }
 
 .ai-panel.open {
-  display: block;
+  display: flex;
   animation: fadeInUp var(--transition-fast) ease;
 }
 
@@ -720,7 +721,8 @@
 
 .ai-panel-body {
   padding: var(--space-md);
-  max-height: calc(100vh - 220px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
