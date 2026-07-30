@@ -2990,7 +2990,10 @@ class EurekaLite {
         const journeyData = typeof journeyRaw === 'string'
           ? JSON.parse(journeyRaw)
           : journeyRaw;
-        keyFindings = (journeyData || []).filter(card => card.discovery && card.discovery.trim());
+        const allWithDiscovery = (journeyData || []).filter(card => card.discovery && card.discovery.trim());
+        // 优先只取勾选了「关键发现」的卡片；若一个都没勾选，则兼容旧数据取全部有发现内容的卡片
+        const checked = allWithDiscovery.filter(card => card.isKeyFinding === true);
+        keyFindings = checked.length > 0 ? checked : allWithDiscovery;
       } catch (e) {
         console.warn('Failed to parse journey data:', e);
         keyFindings = [];
@@ -3033,29 +3036,55 @@ class EurekaLite {
       }
     }
 
-    // If no saved findings but there are key findings from journey, create one finding per key finding
-    if (findings.length === 0 && keyFindings.length > 0) {
-      findings = keyFindings.map(kf => ({
-        sourceFinding: kf.discovery || '',
-        fact: kf.discovery || '',
-        interpret: '',
-        need: '',
-        distill: '',
-        completedSteps: [],
-        factOutput: '',
-        interpretOutput: '',
-        needOutput: '',
-        distillOutput: ''
-      }));
-      // 🔴 关键修复：立即将新创建的 findings 持久化到 storage
-      // 否则 saveFindData() 会因 findings 为空而提前 return，导致 AI 结果永远无法保存
+    // 🔄 增量同步：每次渲染时都将旅程图中的关键发现合并进 findings
+    // 1) 新勾选的关键发现 → 追加为新的 FIND 标签页（fact 自动预填）
+    // 2) 已存在但 fact 为空的 → 自动补填 fact
+    // 3) 用户已填写的内容一律不覆盖
+    let findingsChanged = false;
+    if (keyFindings.length > 0) {
+      keyFindings.forEach(kf => {
+        const src = (kf.discovery || '').trim();
+        if (!src) return;
+        const existing = findings.find(f =>
+          (f.sourceFinding || '').trim() === src || (f.fact || '').trim() === src
+        );
+        if (!existing) {
+          findings.push({
+            sourceFinding: src,
+            fact: src,
+            interpret: '',
+            need: '',
+            distill: '',
+            completedSteps: [],
+            factOutput: '',
+            interpretOutput: '',
+            needOutput: '',
+            distillOutput: ''
+          });
+          findingsChanged = true;
+        } else {
+          if (!(existing.fact || '').trim()) {
+            existing.fact = src;
+            findingsChanged = true;
+          }
+          if (!(existing.sourceFinding || '').trim()) {
+            existing.sourceFinding = src;
+            findingsChanged = true;
+          }
+        }
+      });
+    }
+
+    // 🔴 持久化：新建或同步后的 findings 立即写入 storage
+    // 否则 saveFindData() 会因 findings 为空而提前 return，导致 AI 结果永远无法保存
+    if (findingsChanged) {
       try {
-        const initJson = JSON.stringify({ findings, activeFindingIndex: 0 });
+        const initJson = JSON.stringify({ findings, activeFindingIndex });
         this.saveScreenContent('reveal', 3, initJson);
         this.autoSaveScreenContent('reveal', 3, initJson);
-        console.log(`[FIND] ✅ 初始化并持久化了 ${findings.length} 个关键发现的 FIND 数据`);
+        console.log(`[FIND] ✅ 已同步 ${findings.length} 个关键发现的 FIND 数据（含新增/补填）`);
       } catch (e) {
-        console.warn('[FIND] ⚠️ 初始化 findings 持久化失败:', e);
+        console.warn('[FIND] ⚠️ findings 同步持久化失败:', e);
       }
     }
 
