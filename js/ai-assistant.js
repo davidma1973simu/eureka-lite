@@ -1883,6 +1883,59 @@ ${(userInput || '').trim()}
       }
     }
     return null;
+  },
+
+  // ========== AI 预设模式：帮我想 / 批判我 / 查一查 ==========
+
+  /** 返回 3 个预设模式的 system prompt */
+  _modeSystem(mode) {
+    const prompts = {
+      brainstorm: [
+        '你是 Eureka Lite 的「发散师」，任务是帮助用户开阔思路、探寻更多可能性。',
+        '你永远不否定用户的任何想法，只说"对，还有呢？"。',
+        '基于用户当前所处阶段（RISE）和已填写内容，提出 3-4 条发散性的建议或引导问题。',
+        '每条建议以 ✅ 开头，一句话（25 字内）。',
+        '最终以一个🌱 行动提示结尾。'
+      ].join(' '),
+      critique: [
+        '你是 Eureka Lite 的「批判师」，任务是帮助用户识别盲点和风险。',
+        '你不是在打击用户，而是像投资人一样诚恳地质疑：这个假设成立吗？还有什么风险？',
+        '基于用户当前阶段和已填写内容，提出 3-4 条尖锐但建设性的挑战。',
+        '每条挑战以 ⚠️ 开头，一句话（25 字内）。',
+        '最终以一个📌 关键风险总结结尾。'
+      ].join(' '),
+      research: [
+        '你是 Eureka Lite 的「分析师」，任务是帮助用户补充事实依据。',
+        '基于用户当前阶段和已填写内容，指出需要验证的假设和获取数据的方向。',
+        '提出 3-4 条调研/数据/事实类的建议。',
+        '每条建议以 🔎 开头，一句话（25 字内）。',
+        '最终以一个📊 建议验证清单结尾。'
+      ].join(' ')
+    };
+    return prompts[mode] || prompts.brainstorm;
+  },
+
+  /** 根据模式和当前上下文生成 AI 回复 */
+  async generateAIModeResponse(mode, contextText, userInput) {
+    const system = this._modeSystem(mode);
+    const ctx = (contextText || '').slice(0, 800) || '用户正在使用 Eureka Lite 进行创新项目';
+    const userPart = (userInput || '').trim().slice(0, 200);
+    const prompt = `【项目上下文】${ctx}\n${userPart ? '【用户输入】' + userPart + '\n' : ''}\n请根据你的角色给出回应。`;
+    if (this._hasAI()) {
+      try {
+        const r = await window.AIService.complete(prompt, { system, temperature: 0.7, maxTokens: 400 });
+        if (r && r.trim()) return r.trim();
+      } catch (e) {
+        console.warn('[AI] generateAIModeResponse error:', e.message);
+      }
+    }
+    // 无 AI 时的回退模板
+    const fallbacks = {
+      brainstorm: '✅ 想想用户在这个场景下还有没有被忽略的需求？\n✅ 有没有其他行业的类似解决方案可以借鉴？\n✅ 如果资源不限，你会怎么做？\n✅ 用户的真正动机是什么？\n🌱 试试从"为什么用户会这样做"开始思考。',
+      critique: '⚠️ 你的方案解决了用户愿意付费的问题吗？\n⚠️ 有没有数据支持你的假设？\n⚠️ 如果竞品复制你的方案，你的壁垒是什么？\n📌 关键风险：假设未经验证。',
+      research: '🔎 该领域有哪些成功的商业案例？\n🔎 目标用户群体有多大？\n🔎 现有解决方案为什么不够好？\n📊 建议先做 5 个竞品分析。'
+    };
+    return fallbacks[mode] || fallbacks.brainstorm;
   }
 };
 

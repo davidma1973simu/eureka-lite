@@ -289,6 +289,18 @@ class EurekaLite {
           <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
             我在这里帮助你。有什么可以问我的：
           </p>
+          <div class="ai-mode-buttons">
+            <button class="ai-mode-btn" data-action="brainstorm" style="background:rgba(224,122,47,0.15);border:1px solid rgba(224,122,47,0.4);color:#E07A2F;">
+              💭 帮我想
+            </button>
+            <button class="ai-mode-btn" data-action="critique" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#EF4444;">
+              🔍 批判我
+            </button>
+            <button class="ai-mode-btn" data-action="research" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);color:#3B82F6;">
+              🔎 查一查
+            </button>
+          </div>
+          <div class="ai-mode-divider" style="height:1px;background:var(--border-color,#333);margin:12px 0;"></div>
           <button class="ai-suggestion-btn" data-action="suggest">📝 给我填写建议</button>
           <button class="ai-suggestion-btn" data-action="example">📚 参考案例</button>
           <button class="ai-suggestion-btn" data-action="prefill" id="homePrefillBtn">✨ 帮我预填</button>
@@ -537,6 +549,11 @@ class EurekaLite {
         const action = btn.dataset.action;
         this.handleAiAction(action);
       });
+    });
+
+    // AI mode buttons
+    document.querySelectorAll('.ai-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => { AppState.openAiPanel(); this.updateAiPanel(); this.handleAiAction(btn.dataset.action); });
     });
 
     // AI 设置入口（AI 面板内的齿轮按钮 + 首页横幅按钮）
@@ -1990,7 +2007,69 @@ class EurekaLite {
         }
         break;
       }
+      // AI 预设模式：帮我想 / 批判我 / 查一查
+      case 'brainstorm':
+      case 'critique':
+      case 'research': {
+        const modeLabels = { brainstorm: '💭 帮我想', critique: '🔍 批判我', research: '🔎 查一查' };
+        this.showLoadingToast(`🤖 ${modeLabels[action]} 模式思考中...`);
+        try {
+          // 收集当前上下文
+          const stageInfo = Utils.getStageInfo(stage);
+          const ctxLines = [
+            `当前阶段: ${stageInfo?.name || stage}`,
+            `当前屏: ${screen}`,
+            `项目标题: ${project?.title || '未命名'}`,
+            `项目类别: ${project?.category || '未设定'}`
+          ];
+          if (project?.cards) {
+            const brief = project.cards.projectBriefing;
+            if (brief) {
+              let b = brief;
+              if (typeof b === 'object' && b.content) b = b.content;
+              if (typeof b === 'string') { try { b = JSON.parse(b); } catch(e) {} }
+              if (b && b.targetUser) ctxLines.push(`目标用户: ${String(b.targetUser).slice(0, 80)}`);
+            }
+          }
+          const result = await AIAssistant.generateAIModeResponse(action, ctxLines.join('\n'), userInput);
+          this.showAiModeResult(action, result, userInput);
+        } catch (e) {
+          const fallback = AIAssistant.generateAIModeResponse(action, '', '');
+          if (typeof fallback === 'string') this.showAiModeResult(action, fallback, userInput);
+          else this.showToast('AI 模式暂不可用');
+        }
+        break;
+      }
     }
+  }
+
+  /**
+   * Show AI mode result in the AI panel
+   */
+  showAiModeResult(mode, result, userInput) {
+    const body = document.querySelector('.ai-panel-body');
+    if (!body) return;
+    const icons = { brainstorm: '💭', critique: '🔍', research: '🔎' };
+    const labels = { brainstorm: '帮我想', critique: '批判我', research: '查一查' };
+    const existing = body.querySelector('.ai-mode-result');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'ai-mode-result';
+    div.style.cssText = 'padding:12px;background:var(--bg-card);border-radius:12px;margin-top:12px;border:1px solid var(--border-color);';
+    const processed = result.split('\n').filter(Boolean).map(l => l.trim()).join('<br>');
+    div.innerHTML = '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-primary);">' + (icons[mode] || '💡') + ' ' + (labels[mode] || mode) + '</div><div style="font-size:14px;color:var(--text-secondary);line-height:1.7;">' + processed + '</div>' + (userInput ? '<button class="btn btn-sm" id="useModeResultBtn" style="margin-top:10px;background:var(--reveal-primary);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;">📋 应用到输入框</button>' : '');
+    body.appendChild(div);
+    div.querySelector('#useModeResultBtn')?.addEventListener('click', () => {
+      const input = document.getElementById('screenInput');
+      if (input) {
+        const lines = result.split('\n').filter(l => l.trim().startsWith('✅') || l.trim().startsWith('⚠️') || l.trim().startsWith('🔎'));
+        const text = lines.length ? lines.join('\n') : result;
+        input.value = (input.value ? input.value + '\n---\n' : '') + text;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        this.showToast('已应用到输入框');
+      }
+    });
+    body.scrollTop = body.scrollHeight;
   }
 
   /**
@@ -5027,6 +5106,11 @@ class EurekaLite {
         const action = btn.dataset.action;
         this.handleAiAction(action);
       });
+    });
+
+    // AI mode buttons
+    document.querySelectorAll('.ai-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => { AppState.openAiPanel(); this.updateAiPanel(); this.handleAiAction(btn.dataset.action); });
     });
 
     // AI 设置入口（模块内 AI 面板齿轮）
