@@ -1062,6 +1062,9 @@ class EurekaLite {
         window.EurekaStorage.updateProject(existing.id, { isExample: true });
         existing.isExample = true;
       }
+      // 兼容旧示例：将 HMW 维度键标准化为 4 维模型，
+      // 否则 Inspire 的 HMW 屏渲染会崩溃，导致无法从 Reveal 跳转到 Inspire
+      this.normalizeExampleHmw(existing.id);
       AppState.currentProjectId = existing.id;
       this.showToast('已为您打开示例项目（避免重复创建）');
       this.showPanorama(existing);
@@ -1111,18 +1114,21 @@ class EurekaLite {
     // —— Inspire 阶段 ——
     window.EurekaStorage.updateCard(id, 'hmw', { content: JSON.stringify({
       dimensions: {
-        user: [
-          { id: 'hmw1', text: '我们如何让知识工作者不再"记得有过，但找不到"？' },
-          { id: 'hmw2', text: '我们如何让信息的记录与归档变得无感？' }
+        amplify: [
+          { id: 'hmw1', text: '我们如何让信息的记录与归档变得无感，让知识自然沉淀？' },
+          { id: 'hmw3', text: '我们如何在用户需要某条信息时，让它以零成本的方式自动出现？' }
         ],
-        scenario: [
-          { id: 'hmw3', text: '我们如何在用户需要某条信息时，让它以零成本的方式出现？' }
+        remove: [
+          { id: 'hmw2', text: '我们如何让知识工作者不再"记得有过，但找不到"？' }
         ],
-        ecosystem: [
-          { id: 'hmw4', text: '我们如何在不开发现成的情况下，通过集成已有工具实现跨平台信息聚合？' }
+        flip: [
+          { id: 'hmw4', text: '我们如何在不自研底层存储的情况下，通过集成已有工具实现跨平台信息聚合？' }
+        ],
+        diverge: [
+          { id: 'hmw5', text: '如果信息能像"第二大脑"一样主动推送相关上下文，工作会变成什么样？' }
         ]
       },
-      selectedIds: ['hmw1', 'hmw3']
+      selectedIds: ['hmw2', 'hmw3']
     }) });
     window.EurekaStorage.updateCard(id, 'ideas', { content: JSON.stringify([
       { id: 'idea1', title: 'MOMOS 信息中台：浏览器插件+微信bot+飞书bot，一键转发自动归档', description: '通过插件和聊天机器人在各端捕获信息，AI 自动提取主题标签并归档，无需打开 App' },
@@ -1194,6 +1200,36 @@ class EurekaLite {
     const saved = window.EurekaStorage.getProject(id);
     this.showToast('已加载 MOMOS 示例项目，完整四阶段数据就位，可直接查看全景图～');
     this.showPanorama(saved);
+  }
+
+  /**
+   * 兼容旧示例项目：将 HMW 维度键归一到标准 4 维（amplify/remove/flip/diverge）。
+   * 旧示例曾使用 user/scenario/ecosystem 等键，会导致 Inspire 的 HMW 屏渲染崩溃，
+   * 进而使 Reveal「完成」后无法跳转到 Inspire 阶段。该方法幂等、非破坏（保留条目内容）。
+   */
+  normalizeExampleHmw(id) {
+    const STANDARD = ['amplify', 'remove', 'flip', 'diverge'];
+    const LEGACY = { user: 'amplify', scenario: 'remove', ecosystem: 'flip' };
+    const proj = window.EurekaStorage.getProject(id);
+    if (!proj || !proj.cards || !proj.cards.hmw) return;
+    let raw = proj.cards.hmw;
+    if (typeof raw === 'object' && raw !== null && raw.content) raw = raw.content;
+    let data;
+    try { data = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return; }
+    if (!data || !data.dimensions) return;
+    const hasLegacy = Object.keys(data.dimensions).some(k => !STANDARD.includes(k));
+    if (!hasLegacy) return; // 已是标准结构，无需处理
+    const newDims = { amplify: [], remove: [], flip: [], diverge: [] };
+    let n = 1;
+    Object.keys(data.dimensions).forEach(k => {
+      const target = LEGACY[k] || 'diverge';
+      (data.dimensions[k] || []).forEach(item => {
+        newDims[target].push({ id: item.id || ('hmw' + n), text: item.text });
+        n++;
+      });
+    });
+    data.dimensions = newDims;
+    window.EurekaStorage.updateCard(id, 'hmw', { content: JSON.stringify(data) });
   }
 
   /**
@@ -4689,10 +4725,17 @@ class EurekaLite {
     };
 
     // Collect all items for evaluation matrix
+    // 防御：示例项目历史数据中维度键可能不是标准的 4 维，
+    // 用兼容配置兜底，避免渲染 Inspire 时整体崩溃（否则会导致无法跳转到 Inspire 阶段）
+    const effConfig = { ...dimConfig };
+    Object.keys(dimensions || {}).forEach(k => {
+      if (!effConfig[k]) effConfig[k] = { icon: '💡', label: k, desc: '', color: '#E07A2F' };
+    });
+
     const allItems = [];
     Object.keys(dimensions).forEach(key => {
-      dimensions[key].forEach(item => {
-        allItems.push({ ...item, dimKey: key, dimLabel: dimConfig[key].label });
+      (dimensions[key] || []).forEach(item => {
+        allItems.push({ ...item, dimKey: key, dimLabel: (effConfig[key] || effConfig[k] || dimConfig[key] || { label: key }).label });
       });
     });
 
@@ -4745,8 +4788,8 @@ class EurekaLite {
             点击各维度展开，AI 生成建议或手动添加 HMW。目标：每个维度 1-2 条，总计 6-8 条。
           </div>
           <div class="hmw-dimensions-list">
-            ${Object.keys(dimConfig).map(key => {
-              const cfg = dimConfig[key];
+            ${Object.keys(effConfig).map(key => {
+              const cfg = effConfig[key];
               const items = dimensions[key] || [];
               return `
                 <div class="hmw-dimension-card" data-dim="${key}">
@@ -4810,7 +4853,7 @@ class EurekaLite {
                         <input type="checkbox" class="hmw-eval-check" data-id="${item.id}" ${isSelected ? 'checked' : ''} />
                       </td>
                       <td>
-                        <span class="hmw-eval-dim-tag" style="background:${dimConfig[item.dimKey].color}20;color:${dimConfig[item.dimKey].color}">${item.dimLabel}</span>
+                        <span class="hmw-eval-dim-tag" style="background:${(effConfig[item.dimKey] || dimConfig[item.dimKey] || { color: '#E07A2F' }).color}20;color:${(effConfig[item.dimKey] || dimConfig[item.dimKey] || { color: '#E07A2F' }).color}">${item.dimLabel}</span>
                         <span class="hmw-eval-text">${this.escapeHtml(item.text)}</span>
                       </td>
                       <td>
