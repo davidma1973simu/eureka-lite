@@ -1104,12 +1104,8 @@ class EurekaLite {
       goal: '做一款能自动跨工具聚合碎片信息、按主题/项目智能归档、且支持快速回顾与检索的知识管理工具',
       consensus: '知识工作者为"节省翻找时间"有明显的付费意愿，Notion/飞书文档的普及已教育了市场'
     }) });
-    window.EurekaStorage.updateCard(id, 'findInsight', { content: JSON.stringify({
-      findings: [
-        { need: '用户需要"一次记录，多端可取"，而非每个工具记一点', distill: '信息的价值不在于被记录，而在于被需要时能立刻出现' },
-        { need: '用户需要信息自动按主题归类，而非手动分类', distill: '降低"整理"的心理门槛比增加"记录"功能更重要' }
-      ]
-    }) });
+    // 注意：findInsight 不在这里预置数据，R3 会严格从 R2 旅程地图的「关键发现」自动生成，
+    // 避免示例项目出现与 R2 不一致的多余 FIND 标签页。
 
     // —— Inspire 阶段 ——
     window.EurekaStorage.updateCard(id, 'hmw', { content: JSON.stringify({
@@ -3311,53 +3307,68 @@ class EurekaLite {
       }
     }
 
-    // 🔄 增量同步：每次渲染时都将旅程图中的关键发现合并进 findings
-    // 1) 新勾选的关键发现 → 追加为新的 FIND 标签页（fact 自动预填）
-    // 2) 已存在但 fact 为空的 → 自动补填 fact
-    // 3) 用户已填写的内容一律不覆盖
+    // 🔄 严格同步：R3 的关键发现必须完全来自上一屏（R2 用户旅程地图）的关键发现产出。
+    // 1) 以当前 R2 的关键发现为唯一来源重建 findings 列表
+    // 2) 已填写的内容按 sourceFinding/fact 匹配后完整保留
+    // 3) 不在 R2 中的旧/示例数据会被清理，避免多出莫名其妙的标签页
     let findingsChanged = false;
-    if (keyFindings.length > 0) {
-      keyFindings.forEach(kf => {
-        const src = (kf.discovery || '').trim();
-        if (!src) return;
-        const existing = findings.find(f =>
-          (f.sourceFinding || '').trim() === src || (f.fact || '').trim() === src
-        );
-        if (!existing) {
-          findings.push({
-            sourceFinding: src,
-            fact: src,
-            interpret: '',
-            need: '',
-            distill: '',
-            completedSteps: [],
-            factOutput: '',
-            interpretOutput: '',
-            needOutput: '',
-            distillOutput: ''
-          });
+    const oldFindings = findings.slice();
+    const newFindings = [];
+    keyFindings.forEach(kf => {
+      const src = (kf.discovery || '').trim();
+      if (!src) return;
+      const existing = oldFindings.find(f =>
+        (f.sourceFinding || '').trim() === src || (f.fact || '').trim() === src
+      );
+      if (existing) {
+        newFindings.push({
+          ...existing,
+          sourceFinding: src,
+          fact: (existing.fact || '').trim() ? existing.fact : src
+        });
+      } else {
+        newFindings.push({
+          sourceFinding: src,
+          fact: src,
+          interpret: '',
+          need: '',
+          distill: '',
+          completedSteps: [],
+          factOutput: '',
+          interpretOutput: '',
+          needOutput: '',
+          distillOutput: ''
+        });
+      }
+    });
+
+    if (newFindings.length !== oldFindings.length) {
+      findingsChanged = true;
+    } else {
+      for (let i = 0; i < newFindings.length; i++) {
+        if ((newFindings[i].sourceFinding || '').trim() !== (oldFindings[i].sourceFinding || '').trim()) {
           findingsChanged = true;
-        } else {
-          if (!(existing.fact || '').trim()) {
-            existing.fact = src;
-            findingsChanged = true;
-          }
-          if (!(existing.sourceFinding || '').trim()) {
-            existing.sourceFinding = src;
-            findingsChanged = true;
-          }
+          break;
         }
-      });
+      }
+    }
+    findings = newFindings;
+
+    // 如果当前激活的标签页已被清理，回到第一个
+    const stillActive = findings[activeFindingIndex];
+    if (!stillActive && findings.length > 0) {
+      activeFindingIndex = 0;
+      findingsChanged = true;
     }
 
-    // 🔴 持久化：新建或同步后的 findings 立即写入 storage
+    // 🔴 持久化：同步后的 findings 立即写入 storage
     // 否则 saveFindData() 会因 findings 为空而提前 return，导致 AI 结果永远无法保存
     if (findingsChanged) {
       try {
         const initJson = JSON.stringify({ findings, activeFindingIndex });
         this.saveScreenContent('reveal', 3, initJson);
         this.autoSaveScreenContent('reveal', 3, initJson);
-        console.log(`[FIND] ✅ 已同步 ${findings.length} 个关键发现的 FIND 数据（含新增/补填）`);
+        console.log(`[FIND] ✅ 已严格同步 ${findings.length} 个关键发现（仅来自 R2 用户旅程）`);
       } catch (e) {
         console.warn('[FIND] ⚠️ findings 同步持久化失败:', e);
       }
