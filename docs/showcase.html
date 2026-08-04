@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eureka Lite · 核心界面预览</title>
+<style>
+  :root{
+    --brand:#E07A2F;
+    --brand-soft:#FFF3EA;
+    --ink:#1f2430;
+    --ink-2:#5b6472;
+    --line:#e9ecf1;
+    --bg:#f5f6f8;
+    --green:#2e9b6b;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:40px 20px 80px;}
+  .wrap{max-width:1100px;margin:0 auto;}
+  header.page{text-align:center;margin-bottom:14px;}
+  header.page .logo{display:inline-flex;align-items:center;gap:10px;font-size:30px;font-weight:800;letter-spacing:.5px;}
+  header.page .logo .dot{width:14px;height:14px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 5px var(--brand-soft);}
+  header.page .sub{color:var(--ink-2);margin-top:8px;font-size:15px;}
+  .tag{display:inline-block;background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;margin:4px;}
+  .section-title{margin:48px 0 18px;font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px;}
+  .section-title small{font-weight:500;color:var(--ink-2);font-size:13px;}
+
+  /* browser frame */
+  .screen{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 18px 40px rgba(31,36,48,.08);margin-bottom:34px;}
+  .bar{height:42px;background:#fafbfc;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:0 14px;}
+  .bar .c{width:11px;height:11px;border-radius:50%;background:#e2e5ea;}
+  .bar .c.r{background:#ff5f57}.bar .c.y{background:#febc2e}.bar .c.g{background:#28c840}
+  .bar .url{margin-left:12px;font-size:12px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:7px;padding:4px 10px;flex:1;max-width:420px;}
+  .bar .badge{margin-left:auto;font-size:11px;color:var(--brand);font-weight:700;background:var(--brand-soft);border-radius:6px;padding:3px 8px;}
+  .body{padding:22px;}
+
+  /* top app bar */
+  .appbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .appbar .logo-mini{font-weight:800;color:var(--brand);font-size:17px;}
+  .appbar .nav{display:flex;gap:6px;margin-left:8px;}
+  .appbar .nav span{font-size:13px;color:var(--ink-2);padding:5px 10px;border-radius:8px;}
+  .appbar .nav span.on{background:var(--brand-soft);color:var(--brand);font-weight:700;}
+  .appbar .right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2);}
+  .appbar .coin{background:var(--brand);color:#fff;border-radius:999px;padding:4px 11px;font-weight:700;font-size:12px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+
+  /* home */
+  .hero-input{border:2px solid var(--brand);border-radius:14px;padding:16px 18px;font-size:15px;color:var(--ink);background:#fff;width:100%;}
+  .hero-input::placeholder{color:#aab0bb;}
+  .hint{font-size:12px;color:var(--ink-2);margin:8px 2px 18px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .pcard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;}
+  .pcard .t{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .pcard .d{font-size:12px;color:var(--ink-2);line-height:1.5;}
+  .pcard .ex{margin-top:10px;font-size:11px;color:var(--brand);font-weight:700;}
+  .pcard.example{background:var(--brand-soft);border-color:#ffd9bf;}
+
+  /* stage tracker */
+  .track{display:flex;gap:10px;flex-wrap:wrap;}
+  .stage{flex:1;min-width:150px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;}
+  .stage .k{font-size:12px;color:var(--brand);font-weight:800;letter-spacing:1px;}
+  .stage .n{font-size:16px;font-weight:800;margin:4px 0 6px;}
+  .stage .s{font-size:12px;color:var(--ink-2);line-height:1.6;}
+  .stage.done{border-color:var(--brand);background:var(--brand-soft);}
+
+  /* generic screen blocks */
+  .screen-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+  .screen-head .num{background:var(--brand);color:#fff;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;}
+  .screen-head h3{font-size:17px;}
+  .screen-head .sub{margin-left:auto;font-size:12px;color:var(--ink-2);}
+  .panel{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;background:#fff;}
+  .panel .label{font-size:11px;color:var(--brand);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  .panel .txt{font-size:13px;line-height:1.7;color:var(--ink);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .dim{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;}
+  .dim .ic{width:34px;height:34px;border-radius:9px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+  .dim .c .tt{font-weight:700;font-size:13px;}
+  .dim .c .dd{font-size:12px;color:var(--ink-2);line-height:1.5;margin-top:2px;}
+  .btn{display:inline-block;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-weight:700;font-size:14px;}
+  .btn.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand);}
+  .row{display:flex;gap:10px;align-items:center;margin-top:6px;}
+  .pill{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--ink-2);}
+  .pill.on{background:var(--brand);color:#fff;border-color:var(--brand);}
+
+  /* panorama */
+  .pano{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .pcol{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff;}
+  .pcol .h{font-weight:800;font-size:13px;color:var(--brand);margin-bottom:8px;}
+  .pcol .li{font-size:12px;color:var(--ink);line-height:1.6;padding:5px 0;border-top:1px dashed var(--line);}
+  .pcol .li:first-of-type{border-top:none;}
+
+  footer{text-align:center;color:var(--ink-2);font-size:12px;margin-top:40px;line-height:1.8;}
+  .note{background:#fff;border:1px dashed var(--brand);border-radius:12px;padding:12px 16px;color:var(--ink-2);font-size:12.5px;line-height:1.7;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="logo"><span class="dot"></span>Eureka Lite <span style="color:var(--brand)">v1.1</span></div>
+    <div class="sub">轻量级创新工作台 · 把「一个想法」走完 RISE 四阶段，直到可验证的概念方案与原型</div>
+    <div>
+      <span class="tag">纯前端 SPA</span><span class="tag">零后端</span><span class="tag">localStorage 隐私</span>
+      <span class="tag">RISE 方法论</span><span class="tag">免费开源</span><span class="tag">AI 可选</span>
+    </div>
+  </header>
+
+  <!-- 1. HOME -->
+  <div class="section-title">① 首页 · 一句话启动创新 <small>Home — 输入项目即开始</small></div>
+  <div class="screen">
+    <div class="bar"><span class="c r"></span><span class="c y"></span><span class="c g"></span><span class="url">eureka-lite · 首页</span><span class="badge">v1.1</span></div>
+    <div class="body">
+      <div class="appbar">
+        <span class="logo-mini">⚡ Eureka Lite</span>
+        <div class="nav"><span class="on">工作台</span><span>项目</span><span>全景图</span><span>我的</span></div>
+        <div class="right"><span class="coin">🪙 120</span><span class="avatar">M</span></div>
+      </div>
+      <div class="hero-input">描述你想创新的项目、产品或要解决的用户问题…</div>
+      <div class="hint">提示：可上传资料、语音输入，或直接加载示例项目「MOMOS」体验完整流程。</div>
+      <div class="cards">
+        <div class="pcard example">
+          <div class="t">MOMOS · 示例项目</div>
+          <div class="d">一个跨工具聚合碎片信息、智能归档与检索的知识管理工具。</div>
+          <div class="ex">▶ 一键加载，走完 RISE 全流程</div>
+        </div>
+        <div class="pcard"><div class="t">老年人助餐 App</div><div class="d">最近编辑 · 2 天前 · Reveal 阶段</div></div>
+        <div class="pcard"><div class="t">校园二手交易平台</div><div class="d">最近编辑 · 上周 · Inspire 阶段</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. STAGE TRACKER -->
+  <div class="section-title">② RISE 四阶段导航 <small>结构化引导，而非空白画布</small></div>
+  <div class="screen">
+    <div class="bar"><span class="c r"></span><span class="c y"></span><span class="c g"></span><span class="url">eureka-lite · 阶段总览</span></div>
+    <div class="body">
+      <div class="track">
+        <div class="stage done"><div class="k">REVEAL</div><div class="n">洞察</div><div class="s">场景 → 用户旅程 → FIND 洞察 → 利益方 → 简报</div></div>
+        <div class="stage"><div class="k">INSPIRE</div><div class="n">启发</div><div class="s">HMW 问题重构 → NCO 交叉 → 创意 → 筛选 → 确认</div></div>
+        <div class="stage"><div class="k">SHAPE</div><div class="n">塑造</div><div class="s">四维拷问 → 最小概念方案 → 故事板</div></div>
+        <div class="stage"><div class="k">EXAM</div><div class="n">验证</div><div class="s">原型 → 用户测试 → 报告 → 四维评价 → 电梯演讲</div></div>
+      </div>
+      <div class="note">每一步都有明确的「产出物」与「完成标准」，系统按完成度发放 Eureka Coins（积分），把方法论变成可执行的进度条。</div>
+    </div>
+  </div>
+
+  <!-- 3. REVEAL R5 -->
+  <div class="section-title">③ Reveal R5 · 项目简报 <small>把洞察收敛成一份可分享的简报</small></div>
+  <div class="screen">
+    <div class="bar"><span class="c r"></span><span class="c y"></span><span class="c g"></span><span class="url">eureka-lite · Reveal / 05 项目简报</span></div>
+    <div class="body">
+      <div class="screen-head"><span class="num">R5</span><h3>项目简报</h3><span class="sub">整合前 4 屏产出</span></div>
+      <div class="panel"><div class="label">场景描述</div><div class="txt">知识工作者每天在 5+ 个工具间切换，重要信息散落、难以在需要时立刻出现。</div></div>
+      <div class="panel"><div class="label">关键洞察（FIND）</div><div class="txt">① 信息价值不在被记录，而在被需要时能立刻出现；② 降低「整理」门槛比增加「记录」功能更重要。</div></div>
+      <div class="panel"><div class="label">商业 & 市场假设</div><div class="txt"><strong>假设：</strong>用户愿为「节省翻找时间」付费；Notion/飞书已教育市场，存在明确需求。</div></div>
+      <div class="row"><button class="btn">完成 · +50 积分</button><button class="btn ghost">导出简报</button></div>
+    </div>
+  </div>
+
+  <!-- 4. INSPIRE I1 -->
+  <div class="section-title">④ Inspire I1 · HMW 重构用户问题 <small>用四维模型把「问题」翻过来</small></div>
+  <div class="screen">
+    <div class="bar"><span class="c r"></span><span class="c y"></span><span class="c g"></span><span class="url">eureka-lite · Inspire / 01 HMW</span></div>
+    <div class="body">
+      <div class="screen-head"><span class="num">I1</span><h3>重构用户问题（HMW）</h3><span class="sub">How Might We…</span></div>
+      <div class="grid2">
+        <div class="dim"><div class="ic">🔺</div><div class="c"><div class="tt">Amplify 放大</div><div class="dd">如何放大用户已有的「顺手记录」习惯？</div></div></div>
+        <div class="dim"><div class="ic">➖</div><div class="c"><div class="tt">Remove 移除</div><div class="dd">如何移除「手动分类整理」这一步？</div></div></div>
+        <div class="dim"><div class="ic">🔄</div><div class="c"><div class="tt">Flip 反转</div><div class="dd">如果信息主动来找用户会怎样？</div></div></div>
+        <div class="dim"><div class="ic">🌿</div><div class="c"><div class="tt">Diverge 发散</div><div class="dd">除了笔记，还能在哪些场景沉淀知识？</div></div></div>
+      </div>
+      <div class="note">选中的 HMW 问题会作为下一屏「灵感交叉（NCO）」的输入，驱动创意生成。</div>
+    </div>
+  </div>
+
+  <!-- 5. PANORAMA -->
+  <div class="section-title">⑤ 项目全景图 <small>四阶段产出一键汇总 · 可下载 / 打印</small></div>
+  <div class="screen">
+    <div class="bar"><span class="c r"></span><span class="c y"></span><span class="c g"></span><span class="url">eureka-lite · 项目全景图</span></div>
+    <div class="body">
+      <div class="pano">
+        <div class="pcol"><div class="h">Reveal 洞察</div><div class="li">场景：碎片信息焦虑</div><div class="li">洞察：价值在「即时出现」</div><div class="li">假设：付费意愿明确</div></div>
+        <div class="pcol"><div class="h">Inspire 启发</div><div class="li">HMW：移除手动整理</div><div class="li">创意：主动推送引擎</div><div class="li">入选：3 个概念</div></div>
+        <div class="pcol"><div class="h">Shape 塑造</div><div class="li">四维：可行性/渴望度</div><div class="li">方案：MVP 范围</div><div class="li">故事板：3 幕</div></div>
+        <div class="pcol"><div class="h">Exam 验证</div><div class="li">原型：交互 demo</div><div class="li">测试：5 名用户</div><div class="li">电梯演讲：ready</div></div>
+      </div>
+      <div class="row">
+        <button class="btn">⬇ 下载 HTML</button>
+        <button class="btn ghost">🖨 打印 / 存 PDF</button>
+        <button class="btn ghost">🖼 保存图片</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Eureka Lite v1.1 · 纯前端创新工作台 · 数据保存在你的浏览器<br>
+    在线体验：https://davidma1973simu.github.io/eureka-lite/ ｜ 部署：GitHub Pages（静态，无需服务器）
+  </footer>
+</div>
+</body>
+</html>
