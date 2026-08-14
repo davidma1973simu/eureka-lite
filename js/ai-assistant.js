@@ -1720,10 +1720,11 @@ ${(userInput || '').trim()}
 
   /**
    * 用户体验故事板：基于概念方案生成 6 卡描述。
+   * @param {object|string} context - 结构化项目上下文或旧版概念文本
    * @returns {Promise<{cards:Array<{key,title,desc}>}>}
    */
-  async generateStoryboard(conceptText) {
-    const ctx = (conceptText || '').slice(0, 1500) || '（暂无概念方案）';
+  async generateStoryboard(context) {
+    const ctx = (typeof context === 'object' && context !== null) ? context : { conceptText: String(context || '') };
     const themes = [
       { key: 'problem', title: '用户面对的问题' },
       { key: 'opportunity', title: '我们的创新机遇' },
@@ -1732,11 +1733,13 @@ ${(userInput || '').trim()}
       { key: 'outcome', title: '用户得到的结果' },
       { key: 'feeling', title: '用户的感受和表达' }
     ];
+    const ctxText = this._buildStoryboardContextText(ctx);
     if (this._hasAI()) {
       const prompt =
-        `【概念方案】${ctx}\n\n请用 6 个固定场景讲述用户故事，顺序与标题固定为：` +
+        `【项目背景】\n${ctxText}\n\n` +
+        `请用 6 个固定场景讲述用户故事，顺序与标题固定为：` +
         themes.map(t => t.title).join(' / ') + `\n` +
-        `每个场景写 1-2 句用户视角的描述。\n` +
+        `每个场景写 1-2 句用户视角的描述，请充分利用上面的项目背景。\n` +
         `以 JSON 返回：{"cards":[{"key":"problem","title":"用户面对的问题","desc":""}, ... 共 6 个，key 与标题必须严格对应]}`;
       try {
         const obj = await window.AIService.completeJSON(prompt, {
@@ -1757,12 +1760,55 @@ ${(userInput || '').trim()}
       }
     }
     return {
-      cards: themes.map(t => ({
+      cards: themes.map((t, i) => ({
         key: t.key,
         title: t.title,
-        desc: `（请描述用户在此刻的经历：${t.title}）`
+        desc: this._localStoryboardDescription(ctx, t.key, i)
       }))
     };
+  },
+
+  _buildStoryboardContextText(ctx) {
+    const lines = [];
+    if (ctx.targetUser) lines.push(`目标用户：${ctx.targetUser}`);
+    if (ctx.userProblem) lines.push(`用户问题：${ctx.userProblem}`);
+    if (ctx.insight) lines.push(`核心洞察：${ctx.insight}`);
+    if (ctx.goal) lines.push(`目标：${ctx.goal}`);
+    if (ctx.bestIdeaTitle) lines.push(`最佳创意：${ctx.bestIdeaTitle}${ctx.bestIdeaDescription ? ' — ' + ctx.bestIdeaDescription : ''}`);
+    if (ctx.fourDimResult) lines.push(`四维拷问结论：${ctx.fourDimResult}`);
+    if (ctx.conceptOneLiner) lines.push(`概念一句话：${ctx.conceptOneLiner}`);
+    if (Array.isArray(ctx.conceptFeatures) && ctx.conceptFeatures.length) lines.push(`功能：${ctx.conceptFeatures.join('；')}`);
+    if (Array.isArray(ctx.conceptCharacteristics) && ctx.conceptCharacteristics.length) lines.push(`特性：${ctx.conceptCharacteristics.join('；')}`);
+    if (Array.isArray(ctx.conceptBoundaries) && ctx.conceptBoundaries.length) lines.push(`边界/不做：${ctx.conceptBoundaries.join('；')}`);
+    if (ctx.conceptText) lines.push(`其他背景：${ctx.conceptText}`);
+    return lines.length ? lines.join('\n') : '（暂无项目背景）';
+  },
+
+  _localStoryboardDescription(ctx, key, idx) {
+    const user = ctx.targetUser || '用户';
+    const problem = ctx.userProblem || '他们一直遇到的核心问题';
+    const insight = ctx.insight || '';
+    const oneLiner = ctx.conceptOneLiner || ctx.bestIdeaTitle || '这个新方案';
+    const features = Array.isArray(ctx.conceptFeatures) && ctx.conceptFeatures.length
+      ? ctx.conceptFeatures.join('、')
+      : (Array.isArray(ctx.conceptCharacteristics) && ctx.conceptCharacteristics.length ? ctx.conceptCharacteristics.join('、') : '一种更轻松的解决方式');
+    const goal = ctx.goal || '问题终于得到了控制';
+    switch (key) {
+      case 'problem':
+        return `${user}每天都在面对${problem}。${insight ? `真正的症结在于：${insight.replace(/。$/, '')}。` : '一定有更好的办法。'}`;
+      case 'opportunity':
+        return `这给${user}带来了一个新机会：用一种更顺畅的方式，消除原有阻力，让进展变得自然。`;
+      case 'contact':
+        return `${user}第一次听说“${oneLiner}”。它主打${features}，听起来正是自己需要的。`;
+      case 'usage':
+        return `${user}开始尝试：${oneLiner}让他们通过${features}，在一个简洁的流程里就把问题解决了。`;
+      case 'outcome':
+        return `使用后，${user}节省了时间、减少了麻烦，${goal.replace(/。$/, '')}。`;
+      case 'feeling':
+        return `${user}感到轻松和安心，忍不住告诉朋友：“这正是我想要的。”`;
+      default:
+        return `（第 ${idx + 1} 格：请描述用户在此刻的经历。）`;
+    }
   },
 
   /**
