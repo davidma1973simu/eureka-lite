@@ -7844,20 +7844,40 @@ class EurekaLite {
           <label class="input-label">一句话定义（oneLiner）</label>
           <textarea class="input textarea" id="mcOneLiner" rows="2" placeholder="例如：一个让上班族 3 分钟找到可靠停车位的应用">${this.escapeHtml(concept.oneLiner || '')}</textarea>
         </div>
-        <div class="concept-field">
-          <label class="input-label">功能与特性（features）</label>
-          <div class="concept-list" id="mcFeatures">${concept.features.map(f => this.conceptRowHTML('features', f)).join('')}</div>
-          <button class="btn-add concept-add" data-list="features">➕ 添加</button>
-        </div>
-        <div class="concept-field">
-          <label class="input-label">产品特性（characteristics）</label>
-          <div class="concept-list" id="mcCharacteristics">${concept.characteristics.map(f => this.conceptRowHTML('characteristics', f)).join('')}</div>
-          <button class="btn-add concept-add" data-list="characteristics">➕ 添加</button>
-        </div>
-        <div class="concept-field">
-          <label class="input-label">边界 / 不做什么（boundaries）</label>
-          <div class="concept-list" id="mcBoundaries">${concept.boundaries.map(f => this.conceptRowHTML('boundaries', f)).join('')}</div>
-          <button class="btn-add concept-add" data-list="boundaries">➕ 添加</button>
+        <div class="concept-cards">
+          <div class="concept-card">
+            <div class="concept-card-head">
+              <label class="concept-card-label">功能与特性（features）</label>
+              <span class="concept-count" id="mcFeaturesCount"></span>
+            </div>
+            <textarea class="input textarea concept-card-text" id="mcFeatures" rows="6" placeholder="AI 生成的功能与特性，每行一条">${concept.features.map(f => '• ' + f).join('\n')}</textarea>
+            <div class="concept-card-actions">
+              <button type="button" class="btn-mini concept-add-line" data-target="mcFeatures">+ 添加一行</button>
+              <button type="button" class="btn-mini concept-clear" data-target="mcFeatures">清空</button>
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-card-head">
+              <label class="concept-card-label">产品特性（characteristics）</label>
+              <span class="concept-count" id="mcCharacteristicsCount"></span>
+            </div>
+            <textarea class="input textarea concept-card-text" id="mcCharacteristics" rows="6" placeholder="AI 生成的产品特性，每行一条">${concept.characteristics.map(f => '• ' + f).join('\n')}</textarea>
+            <div class="concept-card-actions">
+              <button type="button" class="btn-mini concept-add-line" data-target="mcCharacteristics">+ 添加一行</button>
+              <button type="button" class="btn-mini concept-clear" data-target="mcCharacteristics">清空</button>
+            </div>
+          </div>
+          <div class="concept-card concept-card-full">
+            <div class="concept-card-head">
+              <label class="concept-card-label">边界 / 不做什么（boundaries）</label>
+              <span class="concept-count" id="mcBoundariesCount"></span>
+            </div>
+            <textarea class="input textarea concept-card-text" id="mcBoundaries" rows="5" placeholder="本概念明确暂不做什么，每行一条">${concept.boundaries.map(f => '• ' + f).join('\n')}</textarea>
+            <div class="concept-card-actions">
+              <button type="button" class="btn-mini concept-add-line" data-target="mcBoundaries">+ 添加一行</button>
+              <button type="button" class="btn-mini concept-clear" data-target="mcBoundaries">清空</button>
+            </div>
+          </div>
         </div>
         <button class="btn btn-secondary" id="saveConceptBtn">保存概念方案</button>
       </div>`;
@@ -7874,26 +7894,36 @@ class EurekaLite {
       saveTimer = setTimeout(() => this.saveShapeMinConceptData(project), 600);
     };
 
-    const bindList = (list) => {
-      const container = document.getElementById('mc' + list.charAt(0).toUpperCase() + list.slice(1));
-      container?.querySelectorAll('.concept-item').forEach(ta => ta.addEventListener('input', onInput));
-      container?.querySelectorAll('.concept-del').forEach(b => b.addEventListener('click', () => {
-        b.closest('.concept-row')?.remove();
-        this.saveShapeMinConceptData(project);
-      }));
+    const updateCounts = () => {
+      ['mcFeatures', 'mcCharacteristics', 'mcBoundaries'].forEach(id => {
+        const el = document.getElementById(id);
+        const n = el ? el.value.split('\n').map(s => s.trim()).filter(Boolean).length : 0;
+        const badge = document.getElementById(id + 'Count');
+        if (badge) badge.textContent = n ? n + ' 条' : '';
+      });
     };
-    ['features', 'characteristics', 'boundaries'].forEach(bindList);
-    oneLinerEl?.addEventListener('input', onInput);
+    ['mcFeatures', 'mcCharacteristics', 'mcBoundaries', 'mcOneLiner'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => { onInput(); updateCounts(); });
+    });
+    updateCounts();
 
-    document.querySelectorAll('.concept-add').forEach(btn => {
+    document.querySelectorAll('.concept-add-line').forEach(btn => {
       btn.addEventListener('click', () => {
-        const list = btn.dataset.list;
-        const container = document.getElementById('mc' + list.charAt(0).toUpperCase() + list.slice(1));
-        if (container) {
-          container.insertAdjacentHTML('beforeend', this.conceptRowHTML(list, ''));
-          bindList(list);
-          this.saveShapeMinConceptData(project);
+        const el = document.getElementById(btn.dataset.target);
+        if (el) {
+          el.value = el.value.replace(/\s*$/, '') + '\n\n';
+          el.focus();
         }
+        updateCounts();
+        this.saveShapeMinConceptData(project);
+      });
+    });
+    document.querySelectorAll('.concept-clear').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const el = document.getElementById(btn.dataset.target);
+        if (el) { el.value = ''; el.focus(); }
+        updateCounts();
+        this.saveShapeMinConceptData(project);
       });
     });
 
@@ -7908,10 +7938,15 @@ class EurekaLite {
         const obj = await AIAssistant.generateMinConcept(
           `用户问题：${pov.userProblem || ''}\n最佳创意：${bestIdea.title || ''} ${bestIdea.description || ''}\n四维拷问：${fdText}`.slice(0, 1500)
         );
+        const fillCard = (id, arr) => {
+          const el = document.getElementById(id);
+          if (el && Array.isArray(arr)) el.value = arr.map(x => '• ' + x).join('\n');
+        };
         if (oneLinerEl && obj.oneLiner) oneLinerEl.value = obj.oneLiner;
-        if (Array.isArray(obj.features)) this.refreshConceptList(project, 'features', obj.features);
-        if (Array.isArray(obj.characteristics)) this.refreshConceptList(project, 'characteristics', obj.characteristics);
-        if (Array.isArray(obj.boundaries)) this.refreshConceptList(project, 'boundaries', obj.boundaries);
+        fillCard('mcFeatures', obj.features);
+        fillCard('mcCharacteristics', obj.characteristics);
+        fillCard('mcBoundaries', obj.boundaries);
+        updateCounts();
         this.saveShapeMinConceptData(project);
         this.showToast('✨ 已生成概念方案初稿，可继续编辑');
       } catch (err) {
@@ -7941,17 +7976,18 @@ class EurekaLite {
 
   saveShapeMinConceptData(project) {
     if (!AppState.currentProjectId) return;
-    const readList = (list) => {
-      const container = document.getElementById('mc' + list.charAt(0).toUpperCase() + list.slice(1));
-      if (!container) return [];
-      return Array.from(container.querySelectorAll('.concept-item')).map(ta => (ta.value || '').trim()).filter(Boolean);
+    const readCard = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return [];
+      return el.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .map(s => s.replace(/^[•·\-*–]\s*/, ''));
     };
     const oneLiner = document.getElementById('mcOneLiner')?.value?.trim() || '';
     const concept = {
       oneLiner,
-      features: readList('features'),
-      characteristics: readList('characteristics'),
-      boundaries: readList('boundaries')
+      features: readCard('mcFeatures'),
+      characteristics: readCard('mcCharacteristics'),
+      boundaries: readCard('mcBoundaries')
     };
     const example = this.getShapeContextSummary(project);
     if (!oneLiner && !concept.features.length && !concept.characteristics.length && !concept.boundaries.length) return;
