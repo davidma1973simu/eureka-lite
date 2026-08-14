@@ -4779,7 +4779,18 @@ class EurekaLite {
             </div>
             <div class="hmw-pov-field">
               <label class="hmw-pov-label">洞察 ${pov.from?.insight ? '<span class="hmw-from-reveal">来自 Reveal</span>' : ''}</label>
-              <input type="text" class="hmw-pov-input" id="hmwPovInsight" placeholder="来自 FIND 的核心洞察" value="${this.escapeHtml(pov.insight)}" />
+              ${pov.insightList && pov.insightList.length > 1 ? `
+                <div class="hmw-pov-insight-list" style="margin-bottom:8px;padding:8px 10px;background:rgba(127,119,221,0.08);border-radius:8px;font-size:13px;line-height:1.6;">
+                  ${pov.insightList.map((it, i) => `
+                    <div class="hmw-pov-insight-item" style="margin-bottom:6px;">
+                      <strong>${i + 1}.</strong> ${it.sourceFinding ? `<span style="color:#7F77DD;font-weight:500;">[${this.escapeHtml(it.sourceFinding)}]</span> ` : ''}${this.escapeHtml(it.insight)}
+                    </div>
+                  `).join('')}
+                </div>
+                <textarea class="hmw-pov-input" id="hmwPovInsight" placeholder="来自 FIND 的核心洞察" rows="3">${this.escapeHtml(pov.insight)}</textarea>
+              ` : `
+                <input type="text" class="hmw-pov-input" id="hmwPovInsight" placeholder="来自 FIND 的核心洞察" value="${this.escapeHtml(pov.insight)}" />
+              `}
             </div>
             <div class="hmw-pov-field full-width">
               <label class="hmw-pov-label">目标 ${pov.from?.goal ? '<span class="hmw-from-reveal">来自 Reveal</span>' : ''}</label>
@@ -4930,7 +4941,7 @@ class EurekaLite {
    * Extract POV data from Reveal stage outputs
    */
   extractPovFromProject(project) {
-    const pov = { targetUser: '', sceneChallenge: '', userProblem: '', insight: '', goal: '', from: {} };
+    const pov = { targetUser: '', sceneChallenge: '', userProblem: '', insight: '', goal: '', from: {}, insightList: [] };
 
     // Try project briefing first
     if (project?.cards?.projectBriefing) {
@@ -4971,37 +4982,42 @@ class EurekaLite {
       } catch (e) {}
     }
 
-    // Extract insight from FIND distill — 多级 fallback（含 AI 输出字段）
-    if (!pov.insight && project?.cards?.findInsight) {
+    // Extract insight from FIND distill — 聚合所有关键发现的洞察
+    if (project?.cards?.findInsight) {
       try {
         let raw = project.cards.findInsight;
         if (typeof raw === 'object' && raw !== null && raw.content) raw = raw.content;
         const findData = typeof raw === 'string' ? JSON.parse(raw) : raw;
         if (Array.isArray(findData.findings)) {
-          const first = findData.findings.find(f => f.distill?.trim());
-          if (first) { pov.insight = first.distill; pov.from.insight = true; }
-          else {
-            // fallback: 取 distillOutput（AI 生成的 D 步输出，优先于用户输入）
-            const withDistillOut = findData.findings.find(f => f.distillOutput?.trim());
-            if (withDistillOut) { pov.insight = withDistillOut.distillOutput; pov.from.insight = true; }
-            else {
-              const withNeed = findData.findings.find(f => f.needOutput?.trim());
-              if (withNeed) { pov.insight = withNeed.needOutput; pov.from.insight = true; }
-              else {
-                const withInterpret = findData.findings.find(f => f.interpretOutput?.trim());
-                if (withInterpret) { pov.insight = withInterpret.interpretOutput; pov.from.insight = true; }
-                // 最后尝试 need（用户输入的 N 步）
-                else {
-                  const withNeedInput = findData.findings.find(f => f.need?.trim());
-                  if (withNeedInput) { pov.insight = withNeedInput.need; pov.from.insight = true; }
-                }
-              }
+          const collected = [];
+          findData.findings.forEach(f => {
+            const source = (f.sourceFinding || f.fact || '').trim();
+            let insight = '';
+            if (f.distill?.trim()) insight = f.distill.trim();
+            else if (f.distillOutput?.trim()) insight = f.distillOutput.trim();
+            else if (f.needOutput?.trim()) insight = f.needOutput.trim();
+            else if (f.interpretOutput?.trim()) insight = f.interpretOutput.trim();
+            else if (f.need?.trim()) insight = f.need.trim();
+            if (insight) collected.push({ sourceFinding: source, insight });
+          });
+          if (collected.length > 0) {
+            pov.insightList = collected;
+            if (collected.length === 1) {
+              pov.insight = collected[0].insight;
+            } else {
+              pov.insight = collected.map((it, i) => {
+                const prefix = it.sourceFinding ? `【${it.sourceFinding}】` : `洞察 ${i + 1}`;
+                return `${i + 1}. ${prefix} ${it.insight}`;
+              }).join('\n\n');
             }
+            pov.from.insight = true;
           }
         } else if (findData.distillOutput || findData.distill) {
           pov.insight = findData.distillOutput || findData.distill; pov.from.insight = true;
+          pov.insightList = [{ sourceFinding: '', insight: pov.insight }];
         } else if (findData.needOutput || findData.need) {
           pov.insight = findData.needOutput || findData.need; pov.from.insight = true;
+          pov.insightList = [{ sourceFinding: '', insight: pov.insight }];
         }
       } catch (e) {}
     }
@@ -5082,6 +5098,11 @@ class EurekaLite {
           : (typeof bg?.consensus === 'string' && bg.consensus.trim()) ? bg.consensus.trim() : '';
         if (g) { pov.goal = g; pov.from.goal = true; }
       } catch (e) {}
+    }
+
+    // Normalize insightList so downstream can always iterate
+    if (pov.insight && (!pov.insightList || pov.insightList.length === 0)) {
+      pov.insightList = [{ sourceFinding: '', insight: pov.insight }];
     }
 
     return pov;
