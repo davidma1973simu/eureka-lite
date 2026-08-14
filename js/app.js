@@ -8451,13 +8451,51 @@ class EurekaLite {
 
   // ========== EXAM 屏4：电梯演讲 & 迭代计划 ==========
 
+  _buildExamElevatorContext(project) {
+    const pov = this.extractPovFromProject(project);
+    const minConcept = this._readCardJSON('shapeMinConcept') || {};
+    const concept = minConcept.concept || {};
+    const storyboard = this._readCardJSON('shapeStoryboard') || {};
+    const storyCards = (storyboard.cards || []).filter(c => c && (c.desc || c.title));
+    const storyboardText = storyCards.map((c, i) => `${i + 1}. ${c.title || ''}：${c.desc || ''}`).join('\n');
+    const tp = this._readCardJSON('examTestPlan') || {};
+    const tr = this._readCardJSON('examTestReport') || {};
+    const fd = this._readCardJSON('examFourDimEval') || {};
+    const testReportText = [
+      tr.effectiveValue && `验证有效的价值：${tr.effectiveValue}`,
+      tr.invalidValue && `被证伪的假设：${tr.invalidValue}`,
+      tr.newProblems && `新发现的问题：${tr.newProblems}`,
+      tr.newOpportunities && `新机会/信息：${tr.newOpportunities}`
+    ].filter(Boolean).join('\n');
+    const fourDimText = fd?.scores ? [
+      `用户价值 ${fd.scores.userValue}/5 — ${fd.reasons?.userValue || ''}`,
+      `商业价值 ${fd.scores.businessValue}/5 — ${fd.reasons?.businessValue || ''}`,
+      `技术可行性 ${fd.scores.feasibility}/5 — ${fd.reasons?.feasibility || ''}`,
+      `创新程度 ${fd.scores.innovation}/5 — ${fd.reasons?.innovation || ''}`
+    ].filter(Boolean).join('\n') : '';
+    return {
+      targetUser: pov.targetUser,
+      sceneChallenge: pov.sceneChallenge,
+      userProblem: pov.userProblem,
+      insight: pov.insight,
+      goal: pov.goal,
+      conceptOneLiner: concept.oneLiner || '',
+      conceptFeatures: (concept.features || []).filter(Boolean).join('；'),
+      conceptCharacteristics: (concept.characteristics || []).filter(Boolean).join('；'),
+      conceptBoundaries: (concept.boundaries || []).filter(Boolean).join('；'),
+      storyboard: storyboardText,
+      testPurpose: tp.purpose || '',
+      testReport: testReportText,
+      fourDim: fourDimText
+    };
+  }
+
   getExamElevatorTemplate(project) {
     const categories = ['阶段聚焦', '优先事项', '目标产出', '衡量成功', '学习收获'];
     const phases = ['30 天', '60 天', '90 天'];
     let saved = this._readCardJSON('examElevator');
     let iteration = (saved && Array.isArray(saved.iteration)) ? saved.iteration : [];
     if (iteration.length === 0) {
-      // 默认 5 行固定维度，呼应 30-60-90 迭代规划参考图
       iteration = categories.map(cat => ({ category: cat, actions: ['', '', ''] }));
     } else {
       iteration = iteration.map((r, i) => ({
@@ -8479,12 +8517,15 @@ class EurekaLite {
       <div class="screen-content animate-fade-in-up">
         <h2 class="screen-title">E4 电梯演讲 & 迭代计划</h2>
         <p class="screen-subtitle">30 秒讲清价值，规划下一步</p>
-        <div class="screen-hint"><span class="hint-icon">💡</span><span>用模板或「✨ AI 生成电梯演讲」；下方按「阶段聚焦 / 优先事项 / 目标产出 / 衡量成功 / 学习收获」五类填写 30-60-90 天迭代计划。</span></div>
+        <div class="screen-hint"><span class="hint-icon">💡</span><span>用模板或下方「✨ AI 生成」按钮生成电梯演讲与 30-60-90 天迭代计划；也可按「阶段聚焦 / 优先事项 / 目标产出 / 衡量成功 / 学习收获」五类手动填写。</span></div>
         <div class="exam-field">
           <label class="input-label">电梯演讲模板</label>
           <div class="elevator-template">我们为【目标用户】提供了【方案】，解决了【问题】，带来【价值】。</div>
         </div>
-        <button class="btn btn-ai" id="genPitchBtn">✨ AI 生成电梯演讲</button>
+        <div class="exam-actions-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn btn-ai" id="genPitchBtn">✨ AI 生成电梯演讲</button>
+          <button class="btn btn-ai" id="genIterBtn">✨ AI 生成迭代计划</button>
+        </div>
         <div class="exam-field"><label class="input-label">电梯演讲（pitch）</label><textarea class="input textarea" id="el_pitch" rows="3" placeholder="我们为...">${this.escapeHtml(pitch)}</textarea></div>
         <div class="exam-field">
           <label class="input-label">30-60-90 天迭代计划</label>
@@ -8537,10 +8578,10 @@ class EurekaLite {
 
     const genBtn = document.getElementById('genPitchBtn');
     genBtn?.addEventListener('click', async () => {
-      const summary = this._readCardJSON('shapeSummary') || {};
-      const tp = this._readCardJSON('examTestPlan') || {};
-      const ctx = `概念方案：${summary.concept ? JSON.stringify(summary.concept) : ''}\n测试目的：${tp.purpose || ''}`.slice(0, 1200);
-      genBtn.disabled = true; genBtn.textContent = '🤖 AI 生成中...';
+      const ctx = this._buildExamElevatorContext(project);
+      genBtn.disabled = true;
+      const originalText = genBtn.textContent;
+      genBtn.textContent = '🤖 AI 生成中...';
       try {
         const obj = await AIAssistant.generateElevatorPitch(ctx);
         if (obj.pitch) document.getElementById('el_pitch').value = obj.pitch;
@@ -8549,7 +8590,38 @@ class EurekaLite {
       } catch (err) {
         this.showToast('生成失败：' + (err.message || '未知错误'));
       } finally {
-        genBtn.disabled = false; genBtn.textContent = '✨ AI 生成电梯演讲';
+        genBtn.disabled = false; genBtn.textContent = originalText;
+      }
+    });
+
+    const genIterBtn = document.getElementById('genIterBtn');
+    genIterBtn?.addEventListener('click', async () => {
+      const ctx = this._buildExamElevatorContext(project);
+      genIterBtn.disabled = true;
+      const originalText = genIterBtn.textContent;
+      genIterBtn.textContent = '🤖 AI 生成中...';
+      try {
+        const obj = await AIAssistant.generateIterationPlan(ctx);
+        if (obj.iteration && Array.isArray(obj.iteration)) {
+          const body = document.getElementById('iterBody');
+          const rows = Array.from(body.querySelectorAll('.iter-row'));
+          obj.iteration.forEach((item, idx) => {
+            const row = rows[idx];
+            if (!row) return;
+            const catInput = row.querySelector('.iter-cat');
+            if (catInput && item.category) catInput.value = item.category;
+            const cells = row.querySelectorAll('.iter-cell');
+            (item.actions || []).forEach((a, ci) => {
+              if (cells[ci]) cells[ci].value = a || '';
+            });
+          });
+        }
+        this.saveExamElevatorData(project);
+        this.showToast('✨ 已生成迭代计划');
+      } catch (err) {
+        this.showToast('生成失败：' + (err.message || '未知错误'));
+      } finally {
+        genIterBtn.disabled = false; genIterBtn.textContent = originalText;
       }
     });
 

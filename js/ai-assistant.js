@@ -1880,16 +1880,43 @@ ${(userInput || '').trim()}
   },
 
   /**
-   * 电梯演讲：基于概念方案+测试目的生成 pitch。
+   * 从结构化上下文对象构建 E4 使用的富文本上下文。
+   */
+  _buildElevatorContextText(context) {
+    const c = context || {};
+    const lines = [];
+    if (c.targetUser) lines.push(`目标用户：${c.targetUser}`);
+    if (c.sceneChallenge) lines.push(`场景：${c.sceneChallenge}`);
+    if (c.userProblem) lines.push(`问题：${c.userProblem}`);
+    if (c.insight) lines.push(`核心洞察：${c.insight}`);
+    if (c.goal) lines.push(`目标：${c.goal}`);
+    if (c.conceptOneLiner) lines.push(`概念方案：${c.conceptOneLiner}`);
+    if (c.conceptFeatures) lines.push(`功能特性：${c.conceptFeatures}`);
+    if (c.conceptCharacteristics) lines.push(`产品特性：${c.conceptCharacteristics}`);
+    if (c.conceptBoundaries) lines.push(`边界：${c.conceptBoundaries}`);
+    if (c.storyboard) lines.push(`用户故事板：\n${c.storyboard}`);
+    if (c.testPurpose) lines.push(`测试目的：${c.testPurpose}`);
+    if (c.testReport) lines.push(`测试发现：\n${c.testReport}`);
+    if (c.fourDim) lines.push(`四维度评价：\n${c.fourDim}`);
+    return lines.join('\n').slice(0, 1800) || '（暂无上下文）';
+  },
+
+  /**
+   * 电梯演讲：基于完整项目上下文生成中文 pitch。
+   * @param {Object} context - 结构化项目上下文
    * @returns {Promise<{pitch:string}>}
    */
-  async generateElevatorPitch(contextText) {
-    const ctx = (contextText || '').slice(0, 1200) || '（暂无上下文）';
+  async generateElevatorPitch(context) {
+    const ctx = this._buildElevatorContextText(context);
     if (this._hasAI()) {
       const prompt =
-        `【上下文】${ctx}\n\n写一段 30 秒电梯演讲，套用结构：` +
-        `我们为【目标用户】提供了【方案】，解决了【问题】，带来【价值】。\n` +
-        `以 JSON 返回：{"pitch":""}`;
+        `基于以下创新项目上下文，写一段 30 秒中文电梯演讲。\n\n` +
+        `上下文：\n${ctx}\n\n` +
+        `要求：\n` +
+        `- 一句话，60-80 字，有钩子。\n` +
+        `- 套用结构：我们为【目标用户】提供了【方案】，解决了【问题】，带来【价值】。\n` +
+        `- 内容要具体，避免空话，必须结合前面的洞察、概念方案、故事板和测试发现。\n` +
+        `- 只返回 JSON：{"pitch":""}`;
       try {
         const obj = await window.AIService.completeJSON(prompt, {
           system: this._systemPersona(), temperature: 0.7, maxTokens: 400
@@ -1899,7 +1926,43 @@ ${(userInput || '').trim()}
         console.warn('[AI] generateElevatorPitch fallback:', e.message);
       }
     }
-    return { pitch: '我们为【目标用户】提供了【方案】，解决了【问题】，带来【价值】。' };
+    const c = context || {};
+    return { pitch: `我们为${c.targetUser || '【目标用户】'}提供了${c.conceptOneLiner || '【方案】'}，解决了${c.userProblem || '【问题】'}，带来${c.goal || '【价值】'}。` };
+  },
+
+  /**
+   * 30-60-90 迭代计划：基于完整项目上下文生成结构化计划。
+   * @param {Object} context - 结构化项目上下文
+   * @returns {Promise<{iteration:Array<{category:string,actions:string[]}>}>}
+   */
+  async generateIterationPlan(context) {
+    const ctx = this._buildElevatorContextText(context);
+    const defaultCategories = ['阶段聚焦', '优先事项', '目标产出', '衡量成功', '学习收获'];
+    if (this._hasAI()) {
+      const prompt =
+        `基于以下创新项目上下文，制定一份 30-60-90 天迭代计划。\n\n` +
+        `上下文：\n${ctx}\n\n` +
+        `只返回 JSON，结构如下：\n` +
+        `{"iteration":[{"category":"阶段聚焦","actions":["30天行动","60天行动","90天行动"]},{"category":"优先事项","actions":["...","...","..."]},{"category":"目标产出","actions":["...","...","..."]},{"category":"衡量成功","actions":["...","...","..."]},{"category":"学习收获","actions":["...","...","..."]}]}\n\n` +
+        `每项行动要具体、可衡量，并与概念方案和测试发现保持一致。每个格子 1-2 句话。`;
+      try {
+        const obj = await window.AIService.completeJSON(prompt, {
+          system: this._systemPersona(), temperature: 0.7, maxTokens: 1000
+        });
+        if (obj && Array.isArray(obj.iteration)) {
+          const normalized = obj.iteration.map((r, i) => ({
+            category: r.category || defaultCategories[i] || '自定义',
+            actions: (Array.isArray(r.actions) ? r.actions : [])
+              .map(a => String(a || ''))
+              .concat(['', '', '']).slice(0, 3)
+          }));
+          if (normalized.length === 5) return { iteration: normalized };
+        }
+      } catch (e) {
+        console.warn('[AI] generateIterationPlan fallback:', e.message);
+      }
+    }
+    return { iteration: defaultCategories.map(cat => ({ category: cat, actions: ['', '', ''] })) };
   },
 
   async generateExamFourDimEval(contextText) {
