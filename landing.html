@@ -38,14 +38,20 @@
   h2.sec { font-size: clamp(22px, 4vw, 30px); text-align: center; margin-bottom: 12px; }
   p.sec-sub { text-align: center; color: var(--muted); max-width: 680px; margin: 0 auto 40px; }
 
-  /* Who / scenarios */
-  .persons { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .person { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 2px 12px rgba(35,38,47,.06); border-top: 4px solid var(--primary); }
-  .person .ico { font-size: 28px; }
-  .person h3 { font-size: 16px; margin: 8px 0 4px; }
-  .person .scene { font-size: 13.5px; color: var(--ink); }
-  .person .scene b { color: var(--inspire); }
-  .person .pain { font-size: 13px; color: var(--muted); margin-top: 8px; border-top: 1px dashed #ECECF2; padding-top: 8px; }
+  /* Who / scenarios — vertical accordion with avatars */
+  .pacc { background: #fff; border: 1px solid #ECECF2; border-radius: 14px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(35,38,47,.05); }
+  .pacc-head { display: flex; align-items: center; gap: 16px; padding: 14px 18px; cursor: pointer; user-select: none; }
+  .pacc-head img.av { flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 8px rgba(35,38,47,.15); }
+  .pacc-head .t { flex: 1; min-width: 0; }
+  .pacc-head .t h3 { font-size: 16.5px; margin: 0 0 2px; }
+  .pacc-head .t p { font-size: 13px; color: var(--muted); margin: 0; }
+  .pacc-head .chev { flex: none; color: #9AA0AE; font-size: 15px; transition: transform .2s; }
+  .pacc.open .chev { transform: rotate(90deg); color: var(--primary); }
+  .pacc-body { display: none; padding: 2px 18px 16px 90px; font-size: 13.5px; }
+  .pacc.open .pacc-body { display: block; }
+  @media (max-width: 520px) { .pacc-body { padding-left: 18px; } }
+  .pacc-body .scene b { color: var(--inspire); }
+  .pacc-body .pain { color: var(--muted); margin-top: 8px; border-top: 1px dashed #ECECF2; padding-top: 8px; }
 
   /* Flow */
   .flow { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
@@ -119,32 +125,53 @@
   <div class="wrap">
     <h2 class="sec">你是不是也卡在这些场景里</h2>
     <p class="sec-sub">创新方法论的书都写得很对，但落到具体的人，缺的是一个能陪你一步步走完的载体。下面 4 类人，最该用它。</p>
-    <div class="persons">
-      <div class="person">
-        <div class="ico">💰</div>
-        <h3>想搞副业的打工人</h3>
-        <div class="scene">下班想做个小产品赚外快，脑子里只有「<b>做个笔记 App</b>」这种模糊念头——<b>用户是谁、怎么变现</b>完全没想清，花两周还在原地打转。</div>
-        <div class="pain">痛点：有念头没方法，越想越乱，最后不了了之。</div>
+    <div>
+      <div class="pacc open">
+        <div class="pacc-head">
+          <img class="av" src="assets/avatars/avatar-worker.png" alt="想搞副业的打工人头像" />
+          <span class="t"><h3>想搞副业的打工人</h3><p>有念头没方法，越想越乱</p></span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="pacc-body">
+          <div class="scene">下班想做个小产品赚外快，脑子里只有「<b>做个笔记 App</b>」这种模糊念头——<b>用户是谁、怎么变现</b>完全没想清，花两周还在原地打转。</div>
+          <div class="pain">痛点：有念头没方法，越想越乱，最后不了了之。</div>
+        </div>
       </div>
-      <div class="person">
-        <div class="ico">🚀</div>
-        <h3>找投资的早期创业者</h3>
-        <div class="scene">有个点子想拉合伙人或找钱，但讲不清「<b>解决什么真问题、为什么是你</b>」。BP 写三页全是功能罗列，投资人看完不知道价值在哪。</div>
-        <div class="pain">痛点：有热情没故事线，讲出去没人听得懂。</div>
+      <div class="pacc">
+        <div class="pacc-head">
+          <img class="av" src="assets/avatars/avatar-founder.png" alt="找投资的早期创业者头像" />
+          <span class="t"><h3>找投资的早期创业者</h3><p>有热情没故事线，讲出去没人听得懂</p></span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="pacc-body">
+          <div class="scene">有个点子想拉合伙人或找钱，但讲不清「<b>解决什么真问题、为什么是你</b>」。BP 写三页全是功能罗列，投资人看完不知道价值在哪。</div>
+          <div class="pain">痛点：有热情没故事线，讲出去没人听得懂。</div>
+        </div>
       </div>
-      <div class="person">
-        <div class="ico">📊</div>
-        <h3>准备跳槽的产品经理</h3>
-        <div class="scene">想做份拿得出手的作品集证明创新能力，但零散想法收不成「<b>洞察 → 方案 → 演讲</b>」的完整链路，面试时只能干讲。</div>
-        <div class="pain">痛点：有经历没沉淀，作品集缺一条主线。</div>
+      <div class="pacc">
+        <div class="pacc-head">
+          <img class="av" src="assets/avatars/avatar-pm.png" alt="准备跳槽的产品经理头像" />
+          <span class="t"><h3>准备跳槽的产品经理</h3><p>有经历没沉淀，作品集缺一条主线</p></span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="pacc-body">
+          <div class="scene">想做份拿得出手的作品集证明创新能力，但零散想法收不成「<b>洞察 → 方案 → 演讲</b>」的完整链路，面试时只能干讲。</div>
+          <div class="pain">痛点：有经历没沉淀，作品集缺一条主线。</div>
+        </div>
       </div>
-      <div class="person">
-        <div class="ico">🏢</div>
-        <h3>被派去「搞创新」的团队</h3>
-        <div class="scene">老板一句「搞点创新」，团队自嗨式脑暴一堆点子，<b>没挖到用户真痛点</b>，做出来没人用，KPI 却压着要产出。</div>
-        <div class="pain">痛点：有动作没方向，落地即无人问津。</div>
+      <div class="pacc">
+        <div class="pacc-head">
+          <img class="av" src="assets/avatars/avatar-team.png" alt="被派去搞创新的团队负责人头像" />
+          <span class="t"><h3>被派去「搞创新」的团队</h3><p>有动作没方向，落地即无人问津</p></span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="pacc-body">
+          <div class="scene">老板一句「搞点创新」，团队自嗨式脑暴一堆点子，<b>没挖到用户真痛点</b>，做出来没人用，KPI 却压着要产出。</div>
+          <div class="pain">痛点：有动作没方向，落地即无人问津。</div>
+        </div>
       </div>
     </div>
+    <p class="sec-sub" style="margin:18px auto 0; font-size:13px;">提示：点击任意卡片可展开查看具体场景 👆</p>
   </div>
 </section>
 
@@ -215,7 +242,7 @@
             </table></div>
           </div>
         </div>
-        <div class="shot"><img src="assets/screenshots/real-inspire-1.png" alt="POV 重构界面截图" /></div>
+        <div class="shot"><img src="assets/screenshots/real-reveal-1.png" alt="Reveal R1 场景描述界面真实截图" /></div>
       </div>
     </div>
 
@@ -415,7 +442,7 @@
 </footer>
 
 <script>
-  document.querySelectorAll('.acc-head').forEach(function (h) {
+  document.querySelectorAll('.acc-head, .pacc-head').forEach(function (h) {
     h.addEventListener('click', function () {
       h.parentElement.classList.toggle('open');
     });
