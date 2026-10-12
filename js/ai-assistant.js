@@ -930,69 +930,99 @@ ${(userInput || '').trim()}
   },
 
   async generateStakeholders(project) {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     const category = project?.category || 'product';
     const title = project?.title || project?.originalTitle || '';
     const sceneData = this._getSceneData(project);
     const findData = this._getFindData(project);
 
-    // Extract topic from project context for contextual generation
     const topic = title || sceneData.targetUser || '该创新方向';
     const scene = sceneData.sceneDesc || '';
     const insight = findData.distill || findData.need || '';
 
-    // Generate contextual stakeholder needs based on project topic
-    const generateNeeds = (role) => {
-      const baseNeeds = {
-        '业务领导': ['战略一致性', '投入产出比', '执行可行性', '速度和结果'],
-        '技术专家': ['技术可行性', '系统整合度', '扩展性', '维护成本'],
-        '合作伙伴': ['共同价值', '资源投入', '风险分担', '合作条件'],
-        '用户代表': ['解决真实痛点', '使用便捷性', '学习成本', '可见价值']
+    // 本地兜底：按类别给出角色 + 有意义的需求描述（绝不输出「核心诉求N」式占位符）
+    const buildLocal = () => {
+      const needsByRole = {
+        '业务领导': ['与战略方向一致，可量化业务价值', '投入产出比清晰、回报周期短', '现有资源即可启动，执行可行性高', '试错成本低，能快速看到结果'],
+        '技术专家': ['技术方案在现有架构上可实现', '能与现有系统顺畅集成', '用户增长后可平滑扩展', '长期维护成本可控'],
+        '合作伙伴': ['合作能带来明确的共同价值', '双方资源投入边界清晰', '合作风险可共担、可退出', '合作条款公平、权责对等'],
+        '用户代表': ['能解决我的真实痛点', '使用简单，几乎零学习成本', '不会给我增加新负担', '好处看得见、摸得着'],
+        '问题承担者': ['痛点能得到实质缓解', '解决方案成本低、容易上手', '不给我的日常增加新负担', '改善效果快速可感知'],
+        '决策/资源方': ['投入产出可衡量、目标可验证', '风险可控、失败可退出', '方向与整体战略一致', '投入的资源可复用'],
+        '执行团队': ['方案清晰、职责边界明确', '有配套工具与流程支持', '工作量在团队承受范围内', '执行过程有反馈与调整机制'],
+        '受影响方': ['现有利益不受损害', '变化过程有平稳过渡', '有反馈与申诉的渠道', '长期看有明确收益'],
+        '探索者': ['探索方向能获得快速反馈', '试错成本低、可高频迭代', '有同伴与案例可以参照', '探索成果可沉淀复用'],
+        '资助方': ['资金使用透明、进度可追踪', '里程碑清晰、结果可验证', '项目社会价值或回报可见', '风险分散、可控'],
+        '潜在用户': ['真正解决我的问题', '可以免费或低成本试用', '上手零门槛、无需注册学习', '我的数据隐私有保障']
       };
-      return baseNeeds[role] || ['核心诉求1', '核心诉求2', '核心诉求3', '核心诉求4'];
+      let stakeholderConfigs = [];
+      if (category === 'product' || category === 'service') {
+        stakeholderConfigs = [
+          { icon: '👔', name: '业务领导', defaultScores: [4, 3, 3, 2] },
+          { icon: '🔧', name: '技术专家', defaultScores: [3, 4, 3, 2] },
+          { icon: '🤝', name: '合作伙伴', defaultScores: [3, 3, 3, 3] },
+          { icon: '👤', name: '用户代表', defaultScores: [4, 3, 2, 3] }
+        ];
+      } else if (category === 'problem') {
+        stakeholderConfigs = [
+          { icon: '😟', name: '问题承担者', defaultScores: [4, 3, 3, 2] },
+          { icon: '💰', name: '决策/资源方', defaultScores: [4, 3, 3, 2] },
+          { icon: '🧠', name: '执行团队', defaultScores: [3, 3, 3, 3] },
+          { icon: '📊', name: '受影响方', defaultScores: [3, 3, 3, 3] }
+        ];
+      } else {
+        stakeholderConfigs = [
+          { icon: '🔍', name: '探索者', defaultScores: [4, 3, 3, 2] },
+          { icon: '💰', name: '资助方', defaultScores: [4, 3, 3, 2] },
+          { icon: '📊', name: '潜在用户', defaultScores: [3, 3, 3, 3] },
+          { icon: '🏢', name: '执行团队', defaultScores: [3, 3, 3, 3] }
+        ];
+      }
+      return {
+        stakeholders: stakeholderConfigs.map(config => {
+          const labels = needsByRole[config.name] || ['需求待补充：请结合项目主题编辑'];
+          const needs = labels.map((label, i) => ({ label, score: config.defaultScores[i] || 3 }));
+          return { name: config.name, icon: config.icon, needs };
+        })
+      };
     };
 
-    // Contextual stakeholder generation based on project type
-    let stakeholderConfigs = [];
+    if (!this._hasAI()) return buildLocal();
 
-    if (category === 'product' || category === 'service') {
-      stakeholderConfigs = [
-        { icon: '👔', name: '业务领导', defaultScores: [4, 3, 3, 2] },
-        { icon: '🔧', name: '技术专家', defaultScores: [3, 4, 3, 2] },
-        { icon: '🤝', name: '合作伙伴', defaultScores: [3, 3, 3, 3] },
-        { icon: '👤', name: '用户代表', defaultScores: [4, 3, 2, 3] }
-      ];
-    } else if (category === 'problem') {
-      stakeholderConfigs = [
-        { icon: '😟', name: '问题承担者', defaultScores: [4, 3, 3, 2] },
-        { icon: '💰', name: '决策/资源方', defaultScores: [4, 3, 3, 2] },
-        { icon: '🧠', name: '执行团队', defaultScores: [3, 3, 3, 3] },
-        { icon: '📊', name: '受影响方', defaultScores: [3, 3, 3, 3] }
-      ];
-    } else {
-      stakeholderConfigs = [
-        { icon: '🔍', name: '探索者', defaultScores: [4, 3, 3, 2] },
-        { icon: '💰', name: '资助方', defaultScores: [4, 3, 3, 2] },
-        { icon: '📊', name: '潜在用户', defaultScores: [3, 3, 3, 3] },
-        { icon: '🏢', name: '执行团队', defaultScores: [3, 3, 3, 3] }
-      ];
+    // 真 LLM 调用：基于项目主题/目标用户/场景/洞察，生成与主题强相关的利益相关方与需求
+    const prompt =
+      `【项目主题】${topic}\n` +
+      (scene ? `【目标用户与场景】${scene}\n` : '') +
+      (insight ? `【用户洞察(POV)】${insight}\n` : '') +
+      `【项目类别】${category}\n\n` +
+      `请为这个创新项目识别 4 个关键利益相关方（如问题承担者、决策/资源方、执行团队、受影响方，或按项目实际调整角色），\n` +
+      `并为每方给出 4 条与项目主题强相关的具体需求（每条不超过 25 字，禁止使用"核心诉求1"这类占位描述），\n` +
+      `同时按 12 分制给出每条需求的影响分（0-4 分，反映该需求对各方的重要程度）。\n` +
+      `以 JSON 返回：{"stakeholders":[{"icon":"👤","name":"角色名","needs":[{"label":"具体需求描述","score":3}]}]}`;
+    try {
+      const obj = await window.AIService.completeJSON(prompt, {
+        system: this._systemPersona(), temperature: 0.7, maxTokens: 1200
+      });
+      const rawList = obj && Array.isArray(obj.stakeholders) ? obj.stakeholders : [];
+      const stakeholders = rawList.slice(0, 5).map(s => ({
+        name: String(s?.name || '').trim().slice(0, 20) || '利益相关方',
+        icon: (s?.icon || '👤').slice ? String(s.icon).slice(0, 4) : '👤',
+        needs: (Array.isArray(s?.needs) ? s.needs : []).slice(0, 4).map(n => {
+          const label = typeof n === 'string' ? n : String(n?.label || '');
+          const score = typeof n === 'object' && n ? parseInt(n.score) : NaN;
+          return {
+            label: label.trim().slice(0, 60) || '需求待补充',
+            score: Number.isFinite(score) ? Math.min(12, Math.max(0, score)) : 3
+          };
+        })
+      })).filter(s => s.needs.length > 0);
+      if (stakeholders.length >= 2) return { stakeholders };
+      console.warn('[AI] generateStakeholders: 返回结构不完整，使用本地兜底');
+    } catch (e) {
+      console.warn('[AI] generateStakeholders fallback:', e.message);
     }
-
-    // Build stakeholders with 12-point needs
-    const stakeholders = stakeholderConfigs.map(config => {
-      const needs = generateNeeds(config.name).map((label, i) => ({
-        label,
-        score: config.defaultScores[i] || 3
-      }));
-      return {
-        name: config.name,
-        icon: config.icon,
-        needs
-      };
-    });
-
-    return { stakeholders };
+    return buildLocal();
   },
 
   _getSceneData(project) {
@@ -1737,9 +1767,13 @@ ${(userInput || '').trim()}
     if (this._hasAI()) {
       const prompt =
         `【项目背景】\n${ctxText}\n\n` +
-        `请用 6 个固定场景讲述用户故事，顺序与标题固定为：` +
-        themes.map(t => t.title).join(' / ') + `\n` +
-        `每个场景写 1-2 句用户视角的描述，请充分利用上面的项目背景。\n` +
+        `请以用户第一人称（用「我」叙述）撰写 6 格故事板，顺序与标题固定为：` +
+        themes.map(t => t.title).join(' / ') + `\n\n` +
+        `硬性要求：\n` +
+        `1. 每格 2-3 句，必须包含具体场景细节（时间/地点/触发事件中至少两项）；\n` +
+        `2. 紧扣上面的概念方案与功能，写「我」做了什么、看到什么、感受什么，并在句中用括号标注情绪词，如（烦躁）（惊喜）；\n` +
+        `3. 六格连起来是一个完整的用户旅程，有起因、转折和结果；\n` +
+        `4. 禁止旁白式概述（如"用户可能会……"），禁止空话套话。\n\n` +
         `以 JSON 返回：{"cards":[{"key":"problem","title":"用户面对的问题","desc":""}, ... 共 6 个，key 与标题必须严格对应]}`;
       try {
         const obj = await window.AIService.completeJSON(prompt, {
@@ -1795,17 +1829,17 @@ ${(userInput || '').trim()}
     const goal = ctx.goal || '问题终于得到了控制';
     switch (key) {
       case 'problem':
-        return `${user}每天都在面对${problem}。${insight ? `真正的症结在于：${insight.replace(/。$/, '')}。` : '一定有更好的办法。'}`;
+        return `我每天都在面对${problem}。${insight ? `最让我难受的是：${insight.replace(/。$/, '')}。（烦躁）` : '一定有更好的办法。（无奈）'}`;
       case 'opportunity':
-        return `这给${user}带来了一个新机会：用一种更顺畅的方式，消除原有阻力，让进展变得自然。`;
+        return `我发现了一个新机会：${oneLiner}。它看起来能让我换一种更轻松的方式解决问题。（期待）`;
       case 'contact':
-        return `${user}第一次听说“${oneLiner}”。它主打${features}，听起来正是自己需要的。`;
+        return `我第一次试用「${oneLiner}」。${features ? `它主打${features}，` : ''}上手几乎没有门槛。（好奇）`;
       case 'usage':
-        return `${user}开始尝试：${oneLiner}让他们通过${features}，在一个简洁的流程里就把问题解决了。`;
+        return `我开始在日常场景里使用它：${oneLiner}帮我一步步把问题理顺，流程很顺滑。（专注）`;
       case 'outcome':
-        return `使用后，${user}节省了时间、减少了麻烦，${goal.replace(/。$/, '')}。`;
+        return `用了一段时间，我省下了时间、少了很多麻烦，${goal.replace(/。$/, '')}。（轻松）`;
       case 'feeling':
-        return `${user}感到轻松和安心，忍不住告诉朋友：“这正是我想要的。”`;
+        return `我忍不住把这个工具推荐给了朋友：“这正是我想要的。”（惊喜、愿意传播）`;
       default:
         return `（第 ${idx + 1} 格：请描述用户在此刻的经历。）`;
     }

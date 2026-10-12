@@ -209,6 +209,7 @@ class EurekaLite {
         <section class="home-greeting">
           <h1 class="greeting-time">${greeting}${userName !== '朋友' ? '，' + userName : ''}</h1>
           <p class="greeting-sub">今天我能帮你做些什么？</p>
+          <a href="landing.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--primary,#7F77DD);text-decoration:none;font-weight:600;">📖 第一次用？3 分钟看懂产品全景介绍 →</a>
         </section>
 
         <!-- Categories -->
@@ -317,7 +318,7 @@ class EurekaLite {
           <!-- 快捷操作 -->
           <div class="ai-suggestion-section">
             <div class="ai-suggestion-section-title">快捷操作</div>
-            <button class="ai-suggestion-btn" data-action="suggest">📝 给我填写建议</button>
+            <button class="ai-suggestion-btn" data-action="expert">🙋 求助人类专家</button>
             <button class="ai-suggestion-btn" data-action="example">📚 参考案例</button>
             <button class="ai-suggestion-btn" data-action="prefill" id="homePrefillBtn">✨ 帮我预填</button>
             <button class="ai-suggestion-btn" data-action="feedback">💬 给我反馈</button>
@@ -2030,6 +2031,9 @@ class EurekaLite {
         }
         break;
       }
+      case 'expert':
+        this.showExpertHelpModal();
+        break;
       case 'example':
         this.showLoadingToast('正在查找案例...');
         setTimeout(() => {
@@ -2068,6 +2072,50 @@ class EurekaLite {
         break;
       }
     }
+  }
+
+  /**
+   * 求助人类专家弹窗：展示微信二维码（assets/wechat-qr.png，可后补）+ 微信号
+   */
+  showExpertHelpModal() {
+    const existing = document.getElementById('expertHelpOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'expertHelpOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-primary,#fff);border-radius:16px;max-width:360px;width:88%;padding:24px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.2);">
+        <div style="font-size:20px;font-weight:700;margin-bottom:6px;">🙋 求助人类专家</div>
+        <p style="font-size:13px;color:var(--text-secondary,#666);margin:0 0 14px;line-height:1.7;">
+          卡住了？AI 之外还有真人专家。<br/>扫码添加创新教练微信，备注「Eureka」，<br/>帮你把点子聊明白。
+        </p>
+        <div id="expertQrBox" style="width:200px;height:200px;margin:0 auto 12px;border-radius:12px;background:var(--bg-secondary,#f5f6fa);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          <img id="expertQrImg" src="assets/wechat-qr.png" alt="微信二维码" style="width:100%;height:100%;object-fit:contain;"
+               onerror="this.style.display='none';document.getElementById('expertQrFallback').style.display='flex';" />
+          <div id="expertQrFallback" style="display:none;flex-direction:column;gap:6px;font-size:12px;color:#999;position:absolute;">
+            <span style="font-size:34px;">📱</span>
+            <span>二维码待放置</span>
+          </div>
+        </div>
+        <div style="font-size:14px;margin-bottom:14px;">微信号：<b id="expertWechatId">sim4wisdom</b></div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button id="copyWechatIdBtn" class="btn btn-secondary" style="flex:1;">复制微信号</button>
+          <button id="closeExpertHelpBtn" class="btn btn-primary" style="flex:1;">关闭</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('closeExpertHelpBtn').addEventListener('click', () => overlay.remove());
+    document.getElementById('copyWechatIdBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText('sim4wisdom');
+        this.showToast('✅ 微信号已复制：sim4wisdom');
+      } catch (e) {
+        this.showToast('复制失败，请手动输入：sim4wisdom');
+      }
+    });
   }
 
   /**
@@ -2704,7 +2752,7 @@ class EurekaLite {
           <!-- 快捷操作 -->
           <div class="ai-suggestion-section">
             <div class="ai-suggestion-section-title">快捷操作</div>
-            <button class="ai-suggestion-btn" data-action="suggest">📝 给我填写建议</button>
+            <button class="ai-suggestion-btn" data-action="expert">🙋 求助人类专家</button>
             <button class="ai-suggestion-btn" data-action="example">📚 参考案例</button>
             <button class="ai-suggestion-btn" data-action="prefill" id="modulePrefillBtn">✨ 帮我预填</button>
             <button class="ai-suggestion-btn" data-action="feedback">💬 给我反馈</button>
@@ -3298,7 +3346,8 @@ class EurekaLite {
             factOutput: saved.factOutput || '',
             interpretOutput: saved.interpretOutput || '',
             needOutput: saved.needOutput || '',
-            distillOutput: saved.distillOutput || ''
+            distillOutput: saved.distillOutput || '',
+            povStatus: 'active'
           }];
           activeFindingIndex = 0;
         }
@@ -3353,6 +3402,12 @@ class EurekaLite {
       }
     }
     findings = newFindings;
+
+    // 🎯 POV 治理：一次只推进一个主 POV（active），其余发现自动进入暂存（stashed）
+    const existingActiveIdx = findings.findIndex(f => f.povStatus === 'active');
+    findings.forEach((f, i) => {
+      f.povStatus = (i === (existingActiveIdx === -1 ? 0 : existingActiveIdx)) ? 'active' : 'stashed';
+    });
 
     // 如果当前激活的标签页已被清理，回到第一个
     const stillActive = findings[activeFindingIndex];
@@ -3446,14 +3501,15 @@ class EurekaLite {
             ${findings.map((f, i) => {
               const isCompleted = (f.completedSteps || []).length === 4;
               const stepCount = (f.completedSteps || []).length;
+              const isMainPov = f.povStatus === 'active';
               const tabTextRaw = (f.sourceFinding || f.fact || f.need || f.distill || `发现${i + 1}`).trim();
               const tabText = this.escapeHtml(tabTextRaw.substring(0, 30));
               const showEllipsis = tabTextRaw.length > 30 ? '...' : '';
               return `
                 <div class="find-tab ${i === activeFindingIndex ? 'active' : ''} ${isCompleted ? 'completed' : ''}"
-                     data-index="${i}" id="findTab_${i}">
-                  <span class="find-tab-badge">${isCompleted ? '✓' : (stepCount || '〇')}</span>
-                  <span class="find-tab-text">${tabText}${showEllipsis}</span>
+                     data-index="${i}" id="findTab_${i}" title="${isMainPov ? '★ 主 POV（推进中）' : '📦 暂存 POV'}">
+                  <span class="find-tab-badge">${isMainPov ? '★' : (isCompleted ? '✓' : (stepCount || '〇'))}</span>
+                  <span class="find-tab-text">${isMainPov ? '<b>★</b> ' : ''}${tabText}${showEllipsis}</span>
                 </div>
               `;
             }).join('')}
@@ -3468,6 +3524,17 @@ class EurekaLite {
         <!-- FIND Steps for Active Finding -->
         ${activeFinding ? `
         <div class="find-container" id="findContainer" data-active-index="${activeFindingIndex}">
+          ${(() => {
+            const isMain = activeFinding.povStatus === 'active';
+            const povDone = (activeFinding.completedSteps || []).includes('distill');
+            const statusBg = isMain ? 'rgba(15,110,86,0.10)' : 'rgba(127,119,221,0.10)';
+            const statusColor = isMain ? '#0F6E56' : '#5B5FC7';
+            return `
+            <div class="find-pov-status" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:var(--space-md);border-radius:10px;background:${statusBg};font-size:13px;color:${statusColor};">
+              <span>${isMain ? '★ 本发现为主 POV：后续阶段（Inspire/Shape/Exam）将只推进这一条洞察' : '📦 本发现为暂存 POV：保留在项目中，可随时切回为主 POV 继续分析'}${(!isMain && !povDone) ? '（FIND 尚未完成）' : ''}</span>
+              <button class="btn btn-secondary" id="togglePovBtn" data-index="${activeFindingIndex}" style="padding:4px 12px;font-size:12px;flex-shrink:0;">${isMain ? '📦 暂存此 POV' : '★ 设为主 POV'}</button>
+            </div>`;
+          })()}
           ${steps.map((step, index) => {
             const isCompleted = completedSteps.includes(step.key);
             const isActive = index === 0 || completedSteps.includes(steps[index - 1]?.key);
@@ -3810,12 +3877,14 @@ class EurekaLite {
         }
         const findData = typeof findRaw === 'string' ? JSON.parse(findRaw) : findRaw;
         if (Array.isArray(findData.findings)) {
-          // New format: collect all completed findings' distill
+          // New format: collect all completed findings' distill (with POV status)
           findData.findings.forEach(f => {
             if (f.distill && f.distill.trim()) {
               allDistills.push({
                 source: f.sourceFinding || '',
-                distill: f.distill
+                distill: f.distill,
+                status: f.povStatus || 'stashed',
+                complete: (f.completedSteps || []).length === 4
               });
             }
           });
@@ -3903,11 +3972,11 @@ class EurekaLite {
               ` : ''}
               ${allDistills.length > 0 ? `
               <div class="briefing-field-compact">
-                <label class="briefing-field-label">🔍 FIND 洞察 (${allDistills.length}) — 可直接编辑</label>
+                <label class="briefing-field-label">🔍 全部 POV 清单 (${allDistills.length}) — ★ 为主 POV（推进中），📦 为暂存 — 可直接编辑</label>
                 <div class="briefing-mini-list">
                   ${allDistills.map((d, i) => `
-                    <div class="briefing-mini-item" style="border-left-color: var(--inspire-primary);">
-                      ${d.source ? `<span class="briefing-mini-stage">${this.escapeHtml(d.source.substring(0, 20))}${d.source.length > 20 ? '...' : ''}</span>` : ''}
+                    <div class="briefing-mini-item" style="border-left-color: ${d.status === 'active' ? 'var(--inspire-primary)' : '#9aa0b5'};">
+                      <span class="briefing-mini-stage">${d.status === 'active' ? '★ 主POV' : '📦 暂存'}${!d.complete ? ' · FIND未完' : ''}${d.source ? ` · ${this.escapeHtml(d.source.substring(0, 16))}${d.source.length > 16 ? '...' : ''}` : ''}</span>
                       <textarea class="briefing-mini-textarea" id="briefingDistill_${i}" rows="2">${this.escapeHtml(d.distill || '')}</textarea>
                     </div>
                   `).join('')}
@@ -4998,18 +5067,13 @@ class EurekaLite {
             else if (f.needOutput?.trim()) insight = f.needOutput.trim();
             else if (f.interpretOutput?.trim()) insight = f.interpretOutput.trim();
             else if (f.need?.trim()) insight = f.need.trim();
-            if (insight) collected.push({ sourceFinding: source, insight });
+            if (insight) collected.push({ sourceFinding: source, insight, status: f.povStatus || 'stashed' });
           });
           if (collected.length > 0) {
-            pov.insightList = collected;
-            if (collected.length === 1) {
-              pov.insight = collected[0].insight;
-            } else {
-              pov.insight = collected.map((it, i) => {
-                const prefix = it.sourceFinding ? `【${it.sourceFinding}】` : `洞察 ${i + 1}`;
-                return `${i + 1}. ${prefix} ${it.insight}`;
-              }).join('\n\n');
-            }
+            // 🎯 一次只推进一个主 POV：只有 active 的洞察带入下一阶段，其余留在暂存区（项目简报中仍可见）
+            const activeItem = collected.find(c => c.status === 'active') || collected[0];
+            pov.insight = activeItem.insight;
+            pov.insightList = [activeItem];
             pov.from.insight = true;
           }
         } else if (findData.distillOutput || findData.distill) {
@@ -6238,6 +6302,33 @@ class EurekaLite {
       });
     });
 
+    // POV 状态切换：设为主 POV / 暂存此 POV（一次只推进一个主 POV）
+    document.getElementById('togglePovBtn')?.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.dataset.index);
+      const findings = this.getFindFindings();
+      if (idx < 0 || idx >= findings.length) return;
+
+      if (findings[idx].povStatus === 'active') {
+        const activeCount = findings.filter(f => f.povStatus === 'active').length;
+        if (activeCount <= 1) {
+          this.showToast('至少保留一个主 POV：请先把另一个发现设为主 POV，再暂存当前这条');
+          return;
+        }
+        findings[idx].povStatus = 'stashed';
+        this.showToast('📦 已暂存该 POV，可在项目简报中查看');
+      } else {
+        const povDone = (findings[idx].completedSteps || []).includes('distill');
+        if (!povDone) {
+          if (!confirm('该发现的 FIND 尚未完成（POV 未凝练）。\n\n设为主 POV 后，后续阶段将基于不完整的洞察推进。\n\n建议先回此发现完成 FIND 四步。仍要设为主 POV 吗？')) return;
+        }
+        findings.forEach((f, i) => { f.povStatus = i === idx ? 'active' : 'stashed'; });
+        this.showToast('★ 已设为主 POV，后续阶段将推进这条洞察');
+      }
+
+      this.saveFindFindings(stage, AppState.currentScreen || 1, findings, idx);
+      this.renderModule('reveal');
+    });
+
     // Find step buttons
     document.querySelectorAll('.find-step-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -6513,6 +6604,23 @@ class EurekaLite {
 
     // Confirm button
     document.getElementById('confirmBriefingBtn')?.addEventListener('click', () => {
+      // 🎯 提交前检查：是否有暂存且未完成 FIND 的 POV（一次只推进一个 POV，但暂存的不应被遗忘）
+      let stashedPending = [];
+      try {
+        const findings = this.getFindFindings();
+        stashedPending = findings.filter(f => f.povStatus === 'stashed' && !(f.completedSteps || []).includes('distill'));
+      } catch (e) {}
+      if (stashedPending.length > 0) {
+        const goFinish = confirm(
+          `还有 ${stashedPending.length} 个暂存的 POV 未完成 FIND 凝练：\n\n` +
+          stashedPending.map((f, i) => `${i + 1}. ${((f.sourceFinding || f.fact || '').trim().substring(0, 24))}...`).join('\n') +
+          `\n\n你的原则是一次只推进一个 POV，暂存的洞察已保留在项目简报中。\n\n点击「确定」回 R3 完成它们；点击「取消」直接提交简报（暂存 POV 待后期调用分析）。`
+        );
+        if (goFinish) {
+          this.goToScreen('reveal', 3);
+          return;
+        }
+      }
       this.saveBriefingData(stage);
       this.showToast('✅ 项目简报已确认并提交');
       // Mark stage as complete
@@ -8007,6 +8115,15 @@ class EurekaLite {
       { key: 'outcome', title: '用户得到的结果' },
       { key: 'feeling', title: '用户的感受和表达' }
     ];
+    // 🖼️ 内置示例配图（无自定义图片时的默认展示，可被用户粘贴的链接覆盖）
+    const defaultImages = {
+      problem: 'assets/storyboard/scene-1-problem.png',
+      opportunity: 'assets/storyboard/scene-2-opportunity.png',
+      contact: 'assets/storyboard/scene-3-contact.png',
+      usage: 'assets/storyboard/scene-4-usage.png',
+      outcome: 'assets/storyboard/scene-5-outcome.png',
+      feeling: 'assets/storyboard/scene-6-feeling.png'
+    };
     let cards = [];
     const saved = this._readCardJSON('shapeStoryboard');
     if (saved && Array.isArray(saved.cards) && saved.cards.length === 6) cards = saved.cards;
@@ -8016,15 +8133,20 @@ class EurekaLite {
       <div class="screen-content animate-fade-in-up">
         <h2 class="screen-title">S3 用户体验故事板</h2>
         <p class="screen-subtitle">基于最小概念方案，用 6 个场景讲完用户故事</p>
-        <div class="screen-hint"><span class="hint-icon">💡</span><span>点击「✨ AI 生成故事板」自动生成 6 卡描述，可自由编辑；可在每张卡下方粘贴 <a href="https://concept-canvas-go.base44.app" target="_blank" rel="noopener">Base44 画布</a> 生成的图片链接。</span></div>
+        <div class="screen-hint"><span class="hint-icon">💡</span><span>点击「✨ AI 生成故事板」自动生成第一人称场景化 6 卡描述，可自由编辑；每卡已配内置示例图，可粘贴你自己的图片链接（如 <a href="https://concept-canvas-go.base44.app" target="_blank" rel="noopener">Base44 画布</a> 生成的图片）替换。</span></div>
         <button class="btn btn-ai" id="genStoryboardBtn">✨ AI 生成故事板</button>
         <div class="storyboard-grid">
           ${cards.map((c, i) => `
             <div class="storyboard-card" data-key="${c.key}">
               <div class="storyboard-card-head"><span class="storyboard-num">${i + 1}</span><span class="storyboard-title">${this.escapeHtml(c.title)}</span></div>
               <textarea class="input textarea storyboard-desc" data-key="${c.key}" rows="3" placeholder="描述用户在此刻的经历...">${this.escapeHtml(c.desc || '')}</textarea>
-              ${c.image ? `<img class="storyboard-img-preview" src="${this.escapeHtml(c.image)}" alt="场景 ${i + 1}" />` : '<div class="storyboard-img-placeholder">🖼️ 图片占位区</div>'}
-              <input type="text" class="input storyboard-img-url" data-key="${c.key}" placeholder="图片链接（可选，可从 Base44 复制）" value="${this.escapeHtml(c.image || '')}" />
+              ${c.image
+                ? `<img class="storyboard-img-preview" src="${this.escapeHtml(c.image)}" alt="场景 ${i + 1}" />`
+                : `<div class="storyboard-img-default" style="position:relative;">
+                     <img class="storyboard-img-preview" src="${defaultImages[c.key] || ''}" alt="场景 ${i + 1} 示例配图" style="opacity:0.92;" />
+                     <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;">示例配图</span>
+                   </div>`}
+              <input type="text" class="input storyboard-img-url" data-key="${c.key}" placeholder="自定义图片链接（可选，粘贴后替换示例图）" value="${this.escapeHtml(c.image || '')}" />
             </div>`).join('')}
         </div>
         <button class="btn btn-secondary" id="saveStoryboardBtn">保存故事板</button>
