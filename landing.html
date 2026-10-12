@@ -20,12 +20,12 @@
   body { font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.75; }
   img { max-width: 100%; display: block; }
   a { color: var(--primary); }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
 
   /* Hero */
   .hero { background: linear-gradient(160deg, #2B2D42 0%, #4E5BA6 60%, #7F77DD 100%); color: #fff; padding: 72px 0 56px; text-align: center; }
   .hero h1 { font-size: clamp(26px, 5vw, 42px); line-height: 1.3; margin-bottom: 16px; }
-  .hero p.sub { font-size: clamp(15px, 2.4vw, 18px); opacity: .92; max-width: 640px; margin: 0 auto 28px; }
+  .hero p.sub { font-size: clamp(15px, 2.4vw, 18px); opacity: .92; max-width: 660px; margin: 0 auto 28px; }
   .hero .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
   .hero .badge { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 5px 16px; font-size: 13px; }
   .cta-btn { display: inline-block; background: #FFC94D; color: #23262F; font-weight: 800; font-size: 17px; padding: 14px 40px; border-radius: 999px; text-decoration: none; box-shadow: 0 6px 24px rgba(0,0,0,.25); transition: transform .15s; }
@@ -36,34 +36,48 @@
   /* Sections */
   section { padding: 60px 0; }
   h2.sec { font-size: clamp(22px, 4vw, 30px); text-align: center; margin-bottom: 12px; }
-  p.sec-sub { text-align: center; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
+  p.sec-sub { text-align: center; color: var(--muted); max-width: 680px; margin: 0 auto 40px; }
 
-  /* Why */
-  .pains { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
-  .pain { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 2px 12px rgba(35,38,47,.06); }
-  .pain .ico { font-size: 28px; }
-  .pain h3 { font-size: 16px; margin: 8px 0 4px; }
-  .pain p { font-size: 13.5px; color: var(--muted); }
+  /* Who / scenarios */
+  .persons { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .person { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 2px 12px rgba(35,38,47,.06); border-top: 4px solid var(--primary); }
+  .person .ico { font-size: 28px; }
+  .person h3 { font-size: 16px; margin: 8px 0 4px; }
+  .person .scene { font-size: 13.5px; color: var(--ink); }
+  .person .scene b { color: var(--inspire); }
+  .person .pain { font-size: 13px; color: var(--muted); margin-top: 8px; border-top: 1px dashed #ECECF2; padding-top: 8px; }
 
   /* Flow */
-  .flow { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 44px; }
+  .flow { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
   .flow .node { border-radius: 12px; padding: 12px 22px; color: #fff; font-weight: 700; font-size: 15px; }
   .flow .arrow { color: #B9BDC9; font-size: 20px; }
+  .flow-hint { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 40px; }
 
   /* Module cards */
   .module { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(35,38,47,.07); margin-bottom: 36px; overflow: hidden; }
   .module-head { color: #fff; padding: 20px 28px; }
   .module-head h3 { font-size: 20px; }
   .module-head p { font-size: 13.5px; opacity: .92; }
-  .module-body { padding: 26px 28px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: start; }
-  @media (max-width: 760px) { .module-body { grid-template-columns: 1fr; } }
-  .module-body table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .module-body td { padding: 9px 8px; border-top: 1px solid #F0F1F5; vertical-align: top; }
-  .module-body td.k { white-space: nowrap; font-weight: 700; width: 84px; }
-  .module-body .shot { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 18px rgba(35,38,47,.12); }
+  .module-body { padding: 26px 28px; display: grid; grid-template-columns: 1.25fr .75fr; gap: 28px; align-items: start; }
+  @media (max-width: 820px) { .module-body { grid-template-columns: 1fr; } }
+  .module-body .shot { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 18px rgba(35,38,47,.12); position: sticky; top: 16px; }
   .module-body .shot img { width: 100%; }
-  .tasks { margin: 4px 0 10px; padding-left: 18px; font-size: 13.5px; }
-  .tasks li { margin-bottom: 3px; }
+  @media (max-width: 820px) { .module-body .shot { position: static; order: -1; } }
+
+  /* Accordion task */
+  .acc { border: 1px solid #ECECF2; border-radius: 12px; margin-bottom: 12px; overflow: hidden; background: #fff; }
+  .acc-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; }
+  .acc-head .num { flex: none; width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; }
+  .acc-head .t { font-weight: 700; font-size: 14.5px; flex: 1; line-height: 1.4; }
+  .acc-head .t small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .acc-head .chev { flex: none; color: #9AA0AE; font-size: 14px; transition: transform .2s; }
+  .acc.open .chev { transform: rotate(90deg); color: var(--primary); }
+  .acc-body { display: none; padding: 0 16px 16px; }
+  .acc.open .acc-body { display: block; }
+  .acc-body table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .acc-body td { padding: 8px 6px; border-top: 1px solid #F2F3F7; vertical-align: top; }
+  .acc-body td.k { font-weight: 800; white-space: nowrap; width: 70px; color: var(--primary); }
+  .acc-body td.v { color: var(--ink); }
 
   /* Value strip */
   .values { background: #23262F; color: #fff; }
@@ -72,6 +86,8 @@
   .value .ico { font-size: 30px; }
   .value h4 { margin: 8px 0 4px; font-size: 15.5px; }
   .value p { font-size: 13px; color: #AEB3C2; }
+  .values .shot { max-width: 720px; margin: 44px auto 0; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .values .shot img { width: 100%; }
 
   /* Final CTA */
   .final { text-align: center; padding: 70px 0; }
@@ -98,16 +114,36 @@
   </div>
 </div>
 
-<!-- ============ WHY ============ -->
+<!-- ============ WHO / SCENARIOS ============ -->
 <section>
   <div class="wrap">
-    <h2 class="sec">为什么你需要它</h2>
-    <p class="sec-sub">创新方法论的书都写得很对，但落到个人，缺的是一个能陪你一步步走完的载体。</p>
-    <div class="pains">
-      <div class="pain"><div class="ico">💡</div><h3>点子多，落地难</h3><p>脑子里天天冒想法，一想到「怎么验证、怎么讲清楚」就卡住。</p></div>
-      <div class="pain"><div class="ico">😤</div><h3>自嗨式创新</h3><p>没挖到用户真痛点就开做，做出来没人用。</p></div>
-      <div class="pain"><div class="ico">🗣️</div><h3>讲不清楚</h3><p>跟别人解释半天「我到底要做啥」，对方还是听不懂。</p></div>
-      <div class="pain"><div class="ico">💸</div><h3>学习成本高</h3><p>创新课几千块，设计咨询按小时收费，个人根本玩不起。</p></div>
+    <h2 class="sec">你是不是也卡在这些场景里</h2>
+    <p class="sec-sub">创新方法论的书都写得很对，但落到具体的人，缺的是一个能陪你一步步走完的载体。下面 4 类人，最该用它。</p>
+    <div class="persons">
+      <div class="person">
+        <div class="ico">💰</div>
+        <h3>想搞副业的打工人</h3>
+        <div class="scene">下班想做个小产品赚外快，脑子里只有「<b>做个笔记 App</b>」这种模糊念头——<b>用户是谁、怎么变现</b>完全没想清，花两周还在原地打转。</div>
+        <div class="pain">痛点：有念头没方法，越想越乱，最后不了了之。</div>
+      </div>
+      <div class="person">
+        <div class="ico">🚀</div>
+        <h3>找投资的早期创业者</h3>
+        <div class="scene">有个点子想拉合伙人或找钱，但讲不清「<b>解决什么真问题、为什么是你</b>」。BP 写三页全是功能罗列，投资人看完不知道价值在哪。</div>
+        <div class="pain">痛点：有热情没故事线，讲出去没人听得懂。</div>
+      </div>
+      <div class="person">
+        <div class="ico">📊</div>
+        <h3>准备跳槽的产品经理</h3>
+        <div class="scene">想做份拿得出手的作品集证明创新能力，但零散想法收不成「<b>洞察 → 方案 → 演讲</b>」的完整链路，面试时只能干讲。</div>
+        <div class="pain">痛点：有经历没沉淀，作品集缺一条主线。</div>
+      </div>
+      <div class="person">
+        <div class="ico">🏢</div>
+        <h3>被派去「搞创新」的团队</h3>
+        <div class="scene">老板一句「搞点创新」，团队自嗨式脑暴一堆点子，<b>没挖到用户真痛点</b>，做出来没人用，KPI 却压着要产出。</div>
+        <div class="pain">痛点：有动作没方向，落地即无人问津。</div>
+      </div>
     </div>
   </div>
 </section>
@@ -116,13 +152,14 @@
 <section style="background:#fff;">
   <div class="wrap">
     <h2 class="sec">如何用：RISE 四步法，19 个任务屏</h2>
-    <p class="sec-sub">每一步都有明确的任务、输入、AI 帮助和产出。你只需要跟着走。</p>
+    <p class="sec-sub">每一步都拆成具体任务。点开下面任意任务，就能看到你该输入什么、AI 帮你做什么、最后得到什么、有什么价值。</p>
     <div class="flow">
       <span class="node" style="background:var(--reveal);">R 揭示</span><span class="arrow">→</span>
       <span class="node" style="background:var(--inspire);">I 启发</span><span class="arrow">→</span>
       <span class="node" style="background:var(--shape);">S 构建</span><span class="arrow">→</span>
       <span class="node" style="background:var(--exam);">E 验证</span>
     </div>
+    <p class="flow-hint">提示：每个任务卡可点击展开 ▸ 看「输入 / AI 帮助 / 得到 / 价值」</p>
 
     <!-- Reveal -->
     <div class="module">
@@ -132,19 +169,51 @@
       </div>
       <div class="module-body">
         <div>
-          <ul class="tasks">
-            <li><b>R1 描述你的场景</b> · 写下一个具体的用户场景或挑战</li>
-            <li><b>R2 探索用户旅程</b> · 从用户视角走一遍完整流程，标注关键触点</li>
-            <li><b>R3 洞察用户痛点</b> · 用 FIND 四步法（事实→解释→需求→凝练）挖出 POV 洞察，一次推进一个主 POV，其余可暂存</li>
-            <li><b>R4 对齐商业目标</b> · AI 识别利益相关方需求，生成可验证的商业假设</li>
-            <li><b>R5 项目简报</b> · 一页纸汇总全部创新资产（含全部 POV 清单）</li>
-          </ul>
-          <table>
-            <tr><td class="k">你输入</td><td>场景描述、用户旅程关键发现、FIND 四步的思考</td></tr>
-            <tr><td class="k">AI 帮你</td><td>解释现象、建议深层需求、凝练 POV、识别利益相关方、生成商业假设</td></tr>
-            <tr><td class="k">你得到</td><td>项目简报：目标用户、场景、POV 洞察、利益相关方、商业假设</td></tr>
-            <tr><td class="k">价值</td><td>确保你做的是「真需求」，并提前想清楚谁支持、谁反对</td></tr>
-          </table>
+          <div class="acc open">
+            <div class="acc-head"><span class="num" style="background:var(--reveal);">R1</span><span class="t">描述你的场景<small>描述一个具体的用户场景或挑战</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">一句话点子 + 目标用户 + 具体场景（谁、在什么情境下、遇到什么麻烦）</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">用「帮我想」模式追问澄清、补全场景要素、给对话式引导</td></tr>
+              <tr><td class="k">你得到</td><td class="v">具象化的「用户画像」+ 完整的「用户任务（JTBD）」</td></tr>
+              <tr><td class="k">价值</td><td class="v">把模糊念头变成可分析的起点，避免凭空假设</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--reveal);">R2</span><span class="t">探索用户旅程<small>从用户视角走一遍完整流程</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">用户在接触前 → 使用 → 离开后 各阶段的关键动作</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">提示关键触点、标注体验断裂点、补充你没想到的中间环节</td></tr>
+              <tr><td class="k">你得到</td><td class="v">完整的「用户旅程地图」+ 关键触点发现</td></tr>
+              <tr><td class="k">价值</td><td class="v">定位用户在哪一步最痛，为后面挖需求锚定位置</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--reveal);">R3</span><span class="t">洞察用户痛点 · FIND<small>用 FIND 四步挖深层需求，一次只推进一个主 POV</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">逐屏填 Fact(事实)→Interpret(解释)→Need(需求)→Distill(凝练)；可开多个发现，每次只推进一个「主 POV」，其余暂存</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">每步给示例与追问，帮你从现象挖到深层需求；把多个发现的 POV 标记为「主 POV」或「暂存」</td></tr>
+              <tr><td class="k">你得到</td><td class="v">经 FIND 推导的 POV 洞察（一句话讲清用户真需求）+ 全部 POV 清单</td></tr>
+              <tr><td class="k">价值</td><td class="v">区分「自嗨需求」和「真需求」，主线一次只专注一条</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--reveal);">R4</span><span class="t">对齐商业目标<small>识别利益相关方需求，生成可验证商业假设</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">浏览 AI 给出的利益相关方，对每条需求打分做反馈</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">调用大模型识别 4 类利益相关方及其与主题强相关的具体需求（12 分制），并基于洞察生成可验证商业假设</td></tr>
+              <tr><td class="k">你得到</td><td class="v">利益相关方需求矩阵 + 商业价值假设</td></tr>
+              <tr><td class="k">价值</td><td class="v">提前看清谁支持谁反对、假设是否站得住</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--reveal);">R5</span><span class="t">项目简报<small>汇总你的创新资产（含全部 POV 清单）</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">查看 / 微调各模块汇总（可编辑洞察、场景、假设）</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">自动聚合 Reveal 全部创新资产成结构化简报</td></tr>
+              <tr><td class="k">你得到</td><td class="v">一页「项目简报」（含全部 POV 清单与状态）</td></tr>
+              <tr><td class="k">价值</td><td class="v">阶段收口，沉淀可复用的创新资产</td></tr>
+            </table></div>
+          </div>
         </div>
         <div class="shot"><img src="assets/screenshots/real-inspire-1.png" alt="POV 重构界面截图" /></div>
       </div>
@@ -158,19 +227,51 @@
       </div>
       <div class="module-body">
         <div>
-          <ul class="tasks">
-            <li><b>I1 重构用户问题</b> · 从 POV 出发，四维重构 HMW 创新机遇问题</li>
-            <li><b>I2 寻找灵感</b> · NCO 灵感卡：New / Cool / Outsider，9 张卡片帮你跳出定势</li>
-            <li><b>I3 生成创意</b> · AI 把 HMW 和灵感做「强制连接」，交叉出创意</li>
-            <li><b>I4 筛选最佳创意</b> · 可行性 / 用户价值 / 商业价值 / 创新程度四维打分</li>
-            <li><b>I5 阶段总结</b> · 确认最佳 HMW 与最佳创意</li>
-          </ul>
-          <table>
-            <tr><td class="k">你输入</td><td>勾选的 HMW、收藏的灵感卡、对创意的打分判断</td></tr>
-            <tr><td class="k">AI 帮你</td><td>重构 HMW、推荐跨界灵感、交叉生成创意、陪你想（头脑风暴 / 挑刺 / 查资料三种模式）</td></tr>
-            <tr><td class="k">你得到</td><td>一批结构化创意 + 一个四维打分选出的最佳创意</td></tr>
-            <tr><td class="k">价值</td><td>从「只有一个想法」到「有一组可选方向」，还知道为什么选它</td></tr>
-          </table>
+          <div class="acc open">
+            <div class="acc-head"><span class="num" style="background:var(--inspire);">I1</span><span class="t">重构用户问题<small>从 POV 出发，四维重构创新机遇（HMW）</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">选定主 POV 作为起点</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">从价值 / 可行性 / 用户 / 约束四个维度重写 HMW 问题，生成多个版本</td></tr>
+              <tr><td class="k">你得到</td><td class="v">一组重构后的 HMW 机遇问题（勾选最多 2 个最佳）</td></tr>
+              <tr><td class="k">价值</td><td class="v">问题对了方向才对，把好洞察转成可发散的「好问题」</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--inspire);">I2</span><span class="t">寻找灵感<small>NCO：New / Cool / Outsider</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">收藏 / 添加你觉得对的灵感卡</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">用 NCO 法（新趋势 / 跨界 / 外行视角）生成 9 张灵感卡，跳出定势</td></tr>
+              <tr><td class="k">你得到</td><td class="v">多维度「灵感库」</td></tr>
+              <tr><td class="k">价值</td><td class="v">打破思维惯性，给创意找原料</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--inspire);">I3</span><span class="t">生成创意<small>基于灵感，做「强制连接」</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">选定 HMW + 挑选灵感卡</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">做「强制连接」，把 HMW 和灵感交叉碰撞，生成大量创意点子</td></tr>
+              <tr><td class="k">你得到</td><td class="v">大量「创意点子」</td></tr>
+              <tr><td class="k">价值</td><td class="v">从「只有一个想法」变「有一组可选方向」</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--inspire);">I4</span><span class="t">筛选最佳创意<small>四维打分，选出最佳</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">对候选创意做四维（可行性 / 用户价值 / 商业价值 / 创新度）打分与判断</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">陪你想（头脑风暴 / 挑刺 / 查资料），指出盲点</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「最佳创意」及选择理由</td></tr>
+              <tr><td class="k">价值</td><td class="v">不只多，还要知道为什么选它</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--inspire);">I5</span><span class="t">Inspire 阶段总结<small>确认启发成果</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">确认最佳 HMW 与最佳创意</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">自动汇总 Inspire 成果</td></tr>
+              <tr><td class="k">你得到</td><td class="v">Inspire 阶段总结（衔接 Shape）</td></tr>
+              <tr><td class="k">价值</td><td class="v">收敛决策，带着理由进入构建</td></tr>
+            </table></div>
+          </div>
         </div>
         <div class="shot"><img src="assets/screenshots/real-inspire-2.png" alt="灵感卡片界面截图" /></div>
       </div>
@@ -184,18 +285,42 @@
       </div>
       <div class="module-body">
         <div>
-          <ul class="tasks">
-            <li><b>S1 四维拷问</b> · 从用户 / 商业 / 技术 / 生态四个维度拷问你的创意</li>
-            <li><b>S2 最小概念方案</b> · 一句话定义 + 功能 + 特性 + 边界（明确不做什么）</li>
-            <li><b>S3 用户体验故事板</b> · AI 用你的第一人称视角写 6 格场景故事，配内置示例插图</li>
-            <li><b>S4 整合确认</b> · 核对概念方案与用户故事</li>
-          </ul>
-          <table>
-            <tr><td class="k">你输入</td><td>对拷问问题的回答、方案的功能与边界决策</td></tr>
-            <tr><td class="k">AI 帮你</td><td>生成拷问问题、起草概念卡与 6 格故事板（场景化、含情绪）</td></tr>
-            <tr><td class="k">你得到</td><td>最小概念方案（功能/特性/边界）+ 用户故事板</td></tr>
-            <tr><td class="k">价值</td><td>3 分钟就能跟人讲清楚「你到底要做啥、不做什么」</td></tr>
-          </table>
+          <div class="acc open">
+            <div class="acc-head"><span class="num" style="background:var(--shape);">S1</span><span class="t">四维拷问<small>从用户 / 商业 / 技术 / 生态 四维度拷问创意</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">对创意在四个维度的回答</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">生成四维新拷问问题，逼你补全假设</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「四维拷问」分析</td></tr>
+              <tr><td class="k">价值</td><td class="v">提前暴露方案暗坑</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--shape);">S2</span><span class="t">最小概念方案<small>定义核心功能与边界（什么做，什么不做）</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">一句话定义 + 功能（做什么）/ 特性（怎么做）/ 边界（不做什么）决策</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">起草概念卡初稿，建议功能与边界</td></tr>
+              <tr><td class="k">你得到</td><td class="v">最小概念方案（MVP）三卡</td></tr>
+              <tr><td class="k">价值</td><td class="v">3 分钟讲清「做啥、不做啥」</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--shape);">S3</span><span class="t">用户体验故事板<small>六个场景讲完一个完整故事</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">触发 AI 写故事或微调 6 格文案，可贴图</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">用你第一人称视角写 6 格场景故事（含情绪），配内置示例插图</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「用户体验故事板」</td></tr>
+              <tr><td class="k">价值</td><td class="v">提前看到用户会怎么用、什么感受</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--shape);">S4</span><span class="t">Shape 整合确认<small>确认你的构建成果</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">核对概念方案与故事板一致性</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">汇总构建成果</td></tr>
+              <tr><td class="k">你得到</td><td class="v">原型方案确认</td></tr>
+              <tr><td class="k">价值</td><td class="v">带着完整方案进入验证</td></tr>
+            </table></div>
+          </div>
         </div>
         <div class="shot"><img src="assets/screenshots/real-shape-2.png" alt="概念卡片界面截图" /></div>
       </div>
@@ -209,19 +334,51 @@
       </div>
       <div class="module-body">
         <div>
-          <ul class="tasks">
-            <li><b>E1 设计测试计划</b> · 测试目的、场景、待验证假设</li>
-            <li><b>E2 测试报告</b> · 诚实记录验证了什么、错在哪里</li>
-            <li><b>E3 四维度评价</b> · 用测试事实支撑四维评分</li>
-            <li><b>E4 电梯演讲 &amp; 迭代计划</b> · AI 生成 30 秒电梯演讲 + 30-60-90 天迭代计划</li>
-            <li><b>E5 整合确认</b> · 完成项目，生成全景图</li>
-          </ul>
-          <table>
-            <tr><td class="k">你输入</td><td>测试计划要素、真实测试发现与反思</td></tr>
-            <tr><td class="k">AI 帮你</td><td>起草测试计划、生成电梯演讲、规划 30-60-90 天行动</td></tr>
-            <tr><td class="k">你得到</td><td>电梯演讲 + 迭代计划 + 项目全景图（一页打包全部成果）</td></tr>
-            <tr><td class="k">价值</td><td>直接拿去接副业单、找合伙人、投 BP、面试展示</td></tr>
-          </table>
+          <div class="acc open">
+            <div class="acc-head"><span class="num" style="background:var(--exam);">E1</span><span class="t">设计测试计划<small>为验证做好准备</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">测试目的、场景、待验证假设</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">起草测试执行计划框架</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「测试执行计划」</td></tr>
+              <tr><td class="k">价值</td><td class="v">先想清测什么，再动手</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--exam);">E2</span><span class="t">测试报告<small>记录真实的测试发现</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">真实测试的发现、错在哪里（诚实记录）</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">引导结构化记录</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「测试报告」</td></tr>
+              <tr><td class="k">价值</td><td class="v">用事实替代自我感觉</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--exam);">E3</span><span class="t">四维度评价<small>基于测试发现，对方案做四维评估</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">基于测试事实做四维评分</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">用测试发现支撑打分，避免拍脑袋</td></tr>
+              <tr><td class="k">你得到</td><td class="v">「四维度评价」</td></tr>
+              <tr><td class="k">价值</td><td class="v">客观判断方案成色</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--exam);">E4</span><span class="t">电梯演讲 &amp; 迭代计划<small>30 秒讲清价值，规划下一步</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">确认核心卖点</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">生成 30 秒电梯演讲 + 30-60-90 天迭代计划</td></tr>
+              <tr><td class="k">你得到</td><td class="v">电梯演讲 + 迭代计划</td></tr>
+              <tr><td class="k">价值</td><td class="v">拿去讲、拿去推</td></tr>
+            </table></div>
+          </div>
+          <div class="acc">
+            <div class="acc-head"><span class="num" style="background:var(--exam);">E5</span><span class="t">Exam 整合确认<small>确认你的验证成果</small></span><span class="chev">▸</span></div>
+            <div class="acc-body"><table>
+              <tr><td class="k">你输入</td><td class="v">确认验证成果</td></tr>
+              <tr><td class="k">AI 帮</td><td class="v">生成项目全景图（一页打包全部）</td></tr>
+              <tr><td class="k">你得到</td><td class="v">项目全景图</td></tr>
+              <tr><td class="k">价值</td><td class="v">一键沉淀全部成果</td></tr>
+            </table></div>
+          </div>
         </div>
         <div class="shot"><img src="assets/screenshots/real-exam-4.png" alt="电梯演讲与迭代计划截图" /></div>
       </div>
@@ -240,9 +397,7 @@
       <div class="value"><div class="ico">📊</div><h4>面试作品</h4><p>全景图 + 电梯演讲，拿得出手的思维证明</p></div>
       <div class="value"><div class="ico">💼</div><h4>BP 素材</h4><p>痛点、方案、假设、计划，一页打包给投资人</p></div>
     </div>
-    <div class="shot" style="max-width:720px;margin:44px auto 0;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">
-      <img src="assets/screenshots/real-panorama.png" alt="项目全景图截图" />
-    </div>
+    <div class="shot"><img src="assets/screenshots/real-panorama.png" alt="项目全景图截图" /></div>
   </div>
 </section>
 
@@ -258,6 +413,14 @@
 <footer>
   Eureka Lite · AI 时代的创新练习 · 数据仅存储于你的浏览器本地，不上传任何服务器
 </footer>
+
+<script>
+  document.querySelectorAll('.acc-head').forEach(function (h) {
+    h.addEventListener('click', function () {
+      h.parentElement.classList.toggle('open');
+    });
+  });
+</script>
 
 </body>
 </html>
